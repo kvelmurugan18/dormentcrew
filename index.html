@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060b13"><title>ECHOES — The Last Transmission</title>
+<link rel="stylesheet" href="cinematic/game.css">
+<script defer src="cinematic/assets/three.min.js"></script>
+<script defer src="cinematic/earth.js"></script>
+<script defer src="cinematic/sky.js"></script>
+<script defer src="cinematic/story.js"></script>
+<script defer src="cinematic/timings.js"></script>
+<script defer src="cinematic/models.js"></script>
+<script defer src="cinematic/world.js"></script>
+<script defer src="cinematic/shots.js"></script>
+<script defer src="cinematic/game.js"></script>
+</head>
+<body>
+<main id="screen" aria-label="ECHOES mission">
+  <canvas id="world" aria-label="Animated mission view"></canvas>
+  <video id="film" playsinline preload="auto" hidden></video>
+  <div class="grade" aria-hidden="true"></div><div id="bars" class="bars" aria-hidden="true"></div>
+  <div id="cut" aria-hidden="true"></div>
+  <div id="visor" aria-hidden="true" hidden><span></span></div>
+  <header class="top"><span class="wordmark"><i></i> ECHOES</span><span id="feed" aria-live="polite">AURORA MISSION FILM</span><div class="tools"><button type="button" id="audio" aria-pressed="false" title="Mute or unmute">Sound on</button><button type="button" id="captions" aria-pressed="false" title="Toggle captions">CC</button><button type="button" id="pause" aria-label="Pause" title="Pause (Esc)" hidden>Ⅱ</button></div></header>
+  <section id="menu" aria-labelledby="title">
+    <p class="overline">AURORA FLIGHT OPERATIONS / 01</p><h1 id="title">ECHOES</h1><p class="subtitle">The Last Transmission</p>
+    <button id="start" type="button" class="primary"><span aria-hidden="true">▶</span> Begin mission</button>
+    <span class="tag">AN INTERACTIVE SPACE FILM</span>
+  </section>
+  <section id="cinema" aria-label="Film controls" hidden><div id="scene-name"></div><div class="time-track"><i id="time"></i></div><button id="skip" type="button">Skip sequence <span aria-hidden="true">↗</span></button></section>
+  <a id="sky-credit" href="https://www.eso.org/public/images/eso0932a/" target="_blank" rel="noopener" hidden>Milky Way panorama · ESO/S. Brunier</a>
+  <section id="hud" aria-label="Field controls" hidden>
+    <div id="objective"><span id="actor"></span><strong id="target"></strong><div id="steps" aria-hidden="true"></div></div>
+    <div id="marker" aria-hidden="true"><i></i><span></span></div>
+    <span id="heading-arrow" aria-hidden="true">▲</span><div id="reticle" aria-hidden="true"></div>
+    <p id="hint" role="status"></p>
+    <div id="touch"><div class="pad" aria-label="Movement controls"><button data-move="forward" type="button" aria-label="Move forward">↑</button><button data-move="left" type="button" aria-label="Move left">←</button><button data-move="back" type="button" aria-label="Move backward">↓</button><button data-move="right" type="button" aria-label="Move right">→</button></div><div class="pad turn" aria-label="Camera controls"><button data-move="turnLeft" type="button" aria-label="Turn left">↶</button><button data-move="turnRight" type="button" aria-label="Turn right">↷</button></div></div>
+    <button type="button" id="interact" class="primary" hidden>Inspect</button>
+    <p class="keyhelp"><kbd>W A S D</kbd> move <b>·</b> <kbd>Q / E</kbd> turn <b>·</b> <kbd>F</kbd> inspect <b>·</b> drag to look</p>
+  </section>
+  <div id="subtitles" aria-live="off" hidden><span id="speaker"></span><p id="speech"></p></div>
+  <section id="end" aria-labelledby="end-title" hidden><p class="overline">EARTH / RECOVERY CONFIRMED</p><h2 id="end-title">Mission complete.</h2><button class="primary" id="again" type="button">Replay mission</button><a href="cinematic/credits.html">Credits and sources</a></section>
+  <div id="paused" role="dialog" aria-modal="true" aria-labelledby="paused-title" hidden><div><h2 id="paused-title">Mission paused</h2><button class="primary" id="resume" type="button">Resume</button></div></div>
+  <section id="unsupported" hidden><h2>3D graphics are unavailable</h2><p>Enable hardware acceleration or open this file in Chrome or Edge to play.</p><button id="watch" type="button" hidden>Watch the opening</button></section>
+</main>
+<noscript>Enable JavaScript to play the locally rendered mission.</noscript>
+</body>
+</html>
