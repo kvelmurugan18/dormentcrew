@@ -25,6 +25,21 @@ const records = [
   {id:'kepler',name:'Kepler',region:'Deep space',site:'Earth-trailing solar orbit · Retired, 2018',image:'kepler.webp',credit:'NASA/Ames/JPL-Caltech · artist’s concept',source:missionBase+'kepler/',text:'Kepler watched stars dim slightly as planets crossed in front of them. It was deactivated after running out of fuel needed to point for science.',clue:'A repeating dip in brightness can reveal an orbiting planet.'}
 ];
 const recordById = Object.fromEntries(records.map(item => [item.id,item]));
+const inspectionRecords = {
+  surveyor: ['surveyor','surveyors'],
+  apollo: ['intrepid','apollo','rover'],
+  alsep: ['station','alsep','reflectors'],
+  ridge: ['ridge','sojourner','viking1','viking2'],
+  opportunity: ['opportunity-photo','opportunity','spirit'],
+  last: ['last','phoenix','insight','ingenuity']
+};
+Object.assign(recordById,Object.fromEntries([
+  {id:'intrepid',name:'Apollo 12 · Intrepid',region:'At this stop',site:'Ocean of Storms · November 1969',image:'intrepid.jpg',credit:'NASA · AS12-46-6749',source:'https://www.nasa.gov/wp-content/uploads/static/history/alsj/a12/as12psr.pdf',text:'Alan Bean unloads equipment from the lunar module. Intrepid’s lower stage carried the landing legs and stayed behind when the crew launched back to orbit.'},
+  {id:'station',name:'Apollo 12 · ALSEP',region:'At this stop',site:'Ocean of Storms · November 1969',image:'alsep-station.jpg',credit:'NASA · AS12-47-6929',source:'https://ntrs.nasa.gov/api/citations/19720013192/downloads/19720013192.pdf',text:'Apollo 12’s central station supplied power and sent readings to Earth. One of the instruments was a seismometer that measured vibrations in the lunar ground.'},
+  {id:'ridge',name:'Perseverance Valley',region:'At this stop',site:'Western rim of Endeavour Crater',image:'marsmap.jpg',credit:'NASA/JPL-Caltech/MSSS · PIA23178',source:'https://science.nasa.gov/photojournal/opportunitys-final-traverse-map/',text:'The yellow line records Opportunity’s actual route to the valley. This overlook gives E.D.I.T.H. a view of the descent without disturbing the rover’s tracks.'},
+  {id:'opportunity-photo',name:'Opportunity',region:'At this stop',site:'Meridiani Planum · March 2014',image:'opportunity-deck.jpg',credit:'NASA/JPL-Caltech/Cornell/Arizona State University · PIA18079',source:'https://science.nasa.gov/photojournal/self-portrait-by-freshly-cleaned-opportunity-mars-rover-in-march-2014/',text:'Opportunity used its own camera to photograph the solar arrays. Wind had swept much of the dust off the panels in this image. In 2018, a planet-wide storm blocked the sunlight the rover needed to keep operating.'},
+  {id:'last',name:'Opportunity’s last transmission',region:'At this stop',site:'Perseverance Valley · June 10, 2018',image:'last.jpg',credit:'NASA/JPL-Caltech/Cornell/ASU · PIA22929',source:'https://science.nasa.gov/resource/opportunitys-last-message/',text:'Only part of the image reached Earth. Opportunity stopped transmitting during the 2018 dust storm and never responded to recovery commands.'}
+].map(item=>[item.id,item])));
 const questions = [
   {prompt:'What was happening when Surveyor 3 was shut down?',options:['Local lunar night was beginning','A dust storm covered Mars','The ascent stage was launching'],correct:0,record:'surveyor',answer:'NASA shut Surveyor 3 down for the lunar night.'},
   {prompt:'What did the Apollo 17 crew attach over the wheel?',options:['A spare antenna','A fender made from maps','A new solar panel'],correct:1,record:'rover',answer:'They used four maps, tape and clamps to make a fender extension.'},

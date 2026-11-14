@@ -81,7 +81,7 @@ function updateCaption(second){
 function talk(id){
   voice.pause();caption(id);
   if(!id||capture||filmPlaying)return;
-  voice.src='cinematic/assets/'+id+'.wav?v=2042';
+  voice.src='cinematic/assets/'+id+'.wav?v=terrain';
   voice.play().catch(()=>{});
 }
 function changeMode(next){
@@ -94,6 +94,7 @@ function changeMode(next){
   $('interview').hidden=next!=='quiz';
   $('menu-sources').hidden=next!=='menu';
   $('news').hidden=true;
+  $('chapter-card').hidden=true;
   $('film-error').hidden=true;
   $('scene-credit').hidden=true;
   displayPlate('',false);
@@ -123,6 +124,10 @@ function enterShot(clip){
   $('feed').textContent=clip.label;
   displayPlate('',false);
   $('news').hidden=!clip.news;
+  if(clip.chapter){
+    $('chapter-number').textContent=clip.chapter[0];
+    $('chapter-title').textContent=clip.chapter[1];
+  }
   const credit=$('scene-credit');
   credit.hidden=!clip.credit;
   if(clip.credit){
@@ -146,7 +151,7 @@ function showSequence(clips,onDone,media=''){
   if(filmPlaying){
     failedMedia=media;
     score.pause();
-    film.src=finalAssets+media+'.mp4';
+    film.src=finalAssets+media+'.mp4?v=terrain';
     film.hidden=false;
     film.play().catch(()=>{
       if(generation===filmGeneration) recoverFilm();
@@ -198,6 +203,7 @@ function updateSequence(dt){
   while(offset>=sequence[index].duration){offset-=sequence[index++].duration;}
   if(index!==shotIndex){shotIndex=index;enterShot(sequence[index]);}
   shotTime=offset;
+  $('chapter-card').hidden=!sequence[index].chapter||shotTime>=2.8;
   updateCaption(shotTime);
   $('time').style.width=(totalTime/length*100)+'%';
 }
@@ -319,8 +325,6 @@ function placeMarker([x,z],range){
     $('heading-arrow').style.transform='translateX(-50%) rotate('+direction+'rad)';
   }
 }
-const moonArchive = ['surveyors','rover','reflectors'];
-const marsArchive = ['sojourner','spirit','viking1','viking2','phoenix','insight','ingenuity'];
 const deepArchive = ['dawn','near','pioneer10','pioneer11','kepler'];
 
 function startReturn(){
@@ -330,10 +334,9 @@ function startReturn(){
 
 function interact(){
   if(mode!=='field'||!escapeStage()||!near)return;
-  held.clear();touches.clear();
-  const stop=field.stops[index];
-  if(recordById[stop.id]) visited.add(stop.id);
-  showSequence(recordShots[stop.id],()=>{
+  const {id}=field.stops[index];
+  const clips=recordShots[id];
+  const advance=()=>{
     if(++index < field.stops.length){
       saveCheckpoint(field.kind,index);
       changeMode('field');
@@ -342,11 +345,18 @@ function interact(){
       return;
     }
     if(field.kind==='moon'){
-      showArchive(moonArchive,()=>showSequence(callClips,()=>enterField('mars'),'transfer-film'));
+      showSequence(callClips,()=>enterField('mars'),'transfer-film');
     }else{
-      showArchive(marsArchive,startReturn);
+      startReturn();
     }
-  },'record-'+stop.id);
+  };
+  const title=field.kind==='moon' ? 'Lunar field inspection' : 'Mars field inspection';
+  const open=voice=>showArchive(inspectionRecords[id],advance,{title,voice,replay});
+  const replay=()=>showSequence(clips,()=>{
+    changeMode('field');
+    open('');
+  },'record-'+id);
+  open(clips[0].voice);
 }
 
 function finish(){
@@ -456,7 +466,7 @@ function draw(dt){
       field.landing.position.y=heightAt(5,14,'moon');
       burn(field.landing,0,false);
     }
-    field.actor.visible=true;
+    field.actor.visible=field.kind==='moon';
     if(escapeStage())updatePlayer(dt);
     scene=field.scene;
   }else if(mode==='movie'&&sequence){
@@ -526,7 +536,9 @@ function start(resume=false){
 function reset(){
   started=false;sequence=null;talk('');score.pause();
   changeMode('menu');
-  displayPlate('cover.webp',true);
+  displayPlate('apollo11-cover.jpg',false);
+  $('art-credit').textContent='NASA · Apollo 11 · 1969';
+  $('art-credit').hidden=false;
   $('feed').textContent='';
   $('start').focus();
 }
@@ -600,6 +612,7 @@ if(capture && canRender){
     for(const shot of window.filmPlan[name])directedShot(shot,.05,0);
     if(astronautAsset)await astronautAsset;
     if(roverAsset)await roverAsset;
+    if(lunarModuleAsset)await lunarModuleAsset;
     await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   };
   window.renderScene=(name,second)=>{

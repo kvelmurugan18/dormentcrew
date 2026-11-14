@@ -9,6 +9,7 @@ let archivePending = null;
 let archiveReturnFocus = null;
 let archiveVoice = false;
 let archiveVideo = null;
+let fieldInspection = null;
 let quizIndex = 0;
 let scoreCount = 0;
 let tried = false;
@@ -40,21 +41,29 @@ function clearCheckpoint() {
   $('continue').hidden = true;
 }
 
-function showArchive(ids, onDone = null) {
+function showArchive(ids, onDone = null, inspection = null) {
   archiveIds = ids;
   archivePending = onDone;
+  fieldInspection = inspection;
   archiveReturnFocus = document.activeElement;
-  archiveVoice = !voice.paused;
+  archiveVoice = !inspection && !voice.paused;
   archiveVideo = [film,interviewVideo].find(video=>!video.hidden&&!video.paused) || null;
   held.clear();
   touches.clear();
   voice.pause();
   archiveVideo?.pause();
-  $('archive-close').hidden = Boolean(archivePending);
+  $('archive').classList.toggle('inspection',Boolean(inspection));
+  $('archive-title').textContent = inspection ? inspection.title : 'Equipment archive';
+  $('archive-close').hidden = Boolean(archivePending && !inspection);
+  $('archive-close').textContent = inspection ? 'Back to route' : 'Close';
+  $('inspection-film').hidden = !inspection;
+  $('archive-continue').textContent = inspection ? 'Next waypoint →' : 'Continue mission →';
   $('archive').showModal();
-  showRecord(ids.find(id=>!visited.has(id)) || ids[0]);
-  const focusTarget = archivePending ? $('archive-list').querySelector('button') : $('archive-close');
+  showRecord(inspection ? ids[0] : ids.find(id=>!visited.has(id)) || ids[0]);
+  const focusTarget = inspection ? $('archive-detail').querySelector('h3') :
+    archivePending ? $('archive-list').querySelector('button') : $('archive-close');
   focusTarget?.focus();
+  if(inspection?.voice)talk(inspection.voice);
 }
 
 function showRecord(id) {
@@ -67,8 +76,9 @@ function showRecord(id) {
   let region;
   archiveIds.forEach(recordId => {
     const item = recordById[recordId];
-    if (item.region !== region) {
-      region = item.region;
+    const section = fieldInspection ? (recordId===archiveIds[0] ? 'At this stop' : 'Related mission records') : item.region;
+    if (section !== region) {
+      region = section;
       const heading = document.createElement('h3');
       heading.textContent = region;
       list.append(heading);
@@ -87,7 +97,7 @@ function showRecord(id) {
   detail.querySelector('h3').textContent = data.name;
   const img = detail.querySelector('img');
   img.alt = 'Mission reference for ' + data.name;
-  img.addEventListener('error', () => { detail.querySelector('figure').hidden = true; }, {once:true});
+  img.addEventListener('error', () => { img.closest('figure').hidden = true; }, {once:true});
   img.src = finalAssets + data.image;
   detail.querySelector('figcaption').textContent = data.credit;
   detail.querySelector('p').textContent = data.text;
@@ -101,18 +111,20 @@ function showRecord(id) {
     detail.querySelector('.archive-links').append(a,document.createTextNode('  '));
   }
   const total = archiveIds.filter(recordId => visited.has(recordId)).length;
-  $('archive-count').textContent = archivePending ? total + ' / ' + archiveIds.length + ' explored' : archiveIds.length + ' records';
-  $('archive-continue').hidden = !archivePending || total < archiveIds.length;
+  $('archive-count').textContent = fieldInspection ? '' : archivePending ? total + ' / ' + archiveIds.length + ' explored' : archiveIds.length + ' records';
+  $('archive-continue').hidden = !archivePending || (!fieldInspection && total < archiveIds.length);
   list.querySelector('[aria-current=true]')?.scrollIntoView({block:'nearest',inline:'nearest'});
-  next.hidden = archiveIds.length === 1 || Boolean(archivePending && total === archiveIds.length);
+  next.hidden = Boolean(fieldInspection) || archiveIds.length === 1 || Boolean(archivePending && total === archiveIds.length);
 }
 
 function closeArchive(continueMission = false) {
-  if(archivePending && (!continueMission || archiveIds.some(id=>!visited.has(id))))return;
+  if(archivePending && !fieldInspection && (!continueMission || archiveIds.some(id=>!visited.has(id))))return;
+  if(fieldInspection)talk('');
   const done = continueMission ? archivePending : null;
   const resume = archiveVoice;
   const resumeVideo = archiveVideo;
   archivePending = null;
+  fieldInspection = null;
   archiveVoice = false;
   archiveVideo = null;
   $('archive').close();
@@ -132,7 +144,7 @@ function startInterview() {
   changeMode('quiz');
   $('feed').textContent = 'EARTH · 2045 · YUVA LIVE';
   if(!reduce){
-    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4';
+    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4?v=terrain';
     interviewVideo.hidden=false;
     interviewVideo.play().catch(()=>{interviewVideo.hidden=true;});
   }
@@ -204,10 +216,16 @@ function bindPanels() {
     if($('archive-next').hidden)$('archive-continue').focus();
   });
   $('archive-close').addEventListener('click', () => closeArchive());
+  $('inspection-film').addEventListener('click', () => {
+    const replay = fieldInspection?.replay;
+    if(!replay)return;
+    closeArchive();
+    replay();
+  });
   $('archive-continue').addEventListener('click', () => closeArchive(true));
   $('archive').addEventListener('cancel', event => {
     event.preventDefault();
-    if(!archivePending)closeArchive();
+    if(!archivePending || fieldInspection)closeArchive();
   });
   $('archive-open').addEventListener('click', () => showArchive(records.map(record => record.id)));
   $('quiz-clue').addEventListener('click', showQuizClue);

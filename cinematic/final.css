@@ -54,3 +54,31 @@ body{font-family:Inter,system-ui,sans-serif}#world{background:#070c10}
 #film-error p{margin:0 0 12px}
 #screen[data-mode=quiz] #subtitles{display:none}
 #screen[data-mode=movie] #world:focus-visible{outline:none}
+#screen[data-mode=menu] #plate{
+  background-size:auto min(100dvh,96vw);
+  background-repeat:no-repeat;
+  background-position:100% 50%;
+  background-color:#020305;
+  mask-image:linear-gradient(90deg,transparent 17%,#000 46%);
+}
+#chapter-card{
+  position:absolute;inset:0;display:grid;z-index:3;align-content:center;justify-items:center;
+  gap:12px;padding:3rem;text-align:center;background:#03070982;pointer-events:none;
+  color:#ffe8b3;text-shadow:0 5px 24px #000;
+}
+#chapter-number{font:700 12px var(--mono);letter-spacing:.18em;text-transform:uppercase}
+#chapter-title{font:500 clamp(38px,7vw,98px)/1.05 Georgia,serif}
+#archive.inspection{width:min(1130px,96vw);background:#0a1219}
+.inspection .archive-grid{grid-template-columns:minmax(155px,23%) minmax(0,1fr)}
+.inspection #archive-detail{display:grid;grid-template-columns:1fr;gap:6px}
+.inspection #archive-detail img{height:min(40dvh,440px)}
+.inspection #archive-detail p{max-width:68ch}
+.inspection #archive-detail h3{margin:0;font-size:clamp(25px,4vw,38px)}
+.inspection .archive-actions{position:sticky;bottom:0;background:#0a1219;padding-top:10px}
+@media(max-width:700px){
+  #screen[data-mode=menu] #plate{background-size:auto 66dvh;background-position:80% 2%;mask-image:linear-gradient(180deg,#000 38%,transparent 76%)}
+  #screen[data-mode=menu] .grade{background:linear-gradient(0deg,#04080d 2%,#04080dd9 30%,transparent 74%)}
+  #menu{top:auto;bottom:11%;transform:none}
+  .inspection .archive-grid{grid-template-columns:1fr}
+  .inspection #archive-detail img{height:min(34dvh,310px)}
+}

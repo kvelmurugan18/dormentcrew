@@ -4,22 +4,29 @@ const clip=(shot,voice,label,options={})=>({
 });
 const voyagerCredit={credit:'Voyager animation · NASA / Jonathan North',source:'https://svs.gsfc.nasa.gov/15120/'};
 const introClips=[
-  clip('launch','','FLIGHT ARCHIVE · ARTEMIS II · APRIL 2026',{id:'flightArchive',duration:5.5,
+  clip('launch','','FLIGHT ARCHIVE · ARTEMIS II · APRIL 2026',{id:'flightArchive',duration:5.5,chapter:['Chapter 1','Two worlds go quiet'],
     credit:{credit:'Artemis II launch footage · NASA',source:'https://svs.gsfc.nasa.gov/31385/'}}),
-  clip('signal','signal','EARTH · 2042'),
-  clip('signal','trainingMoon','YUVA · LUNAR TRAINING',{credit:recordById.apollo}),
-  clip('signal','trainingMars','E.D.I.T.H. · MARS TRAINING',{credit:recordById.opportunity}),
-  clip('launch','launch','EARTH · SHARED LAUNCH'),
-  clip('split','split','EARTH ORBIT · SEPARATION'),
-  clip('landing','landing','OCEAN OF STORMS · DAYS LATER')
+  clip('signal','signal','EARTH · 2042',{
+    credit:{credit:'Orion reference animation · NASA',source:'https://images.nasa.gov/details/Artemis_I_Orion_in_space_animation4K_2021'}}),
+  clip('signal','trainingMoon','YUVA · LUNAR TRAINING',{
+    credit:{credit:'Training reference · NASA / Artemis II',source:'https://images.nasa.gov/details/jsc2026m000006-Artemis_II_Lunar_Flyby_Photography_Training'}}),
+  clip('signal','trainingMars','E.D.I.T.H. · MARS TRAINING',{
+    credit:{credit:'Mars dust-storm data · NASA/JPL-Caltech/MSSS',source:'https://svs.gsfc.nasa.gov/30983/'}}),
+  clip('launch','launch','EARTH · SHARED LAUNCH',{
+    credit:{credit:'Launch visuals from the Artemis II archive · NASA',source:'https://svs.gsfc.nasa.gov/31385/'}}),
+  clip('split','split','EARTH ORBIT · SEPARATION',{
+    credit:{credit:'Orion reference animation · NASA',source:'https://images.nasa.gov/details/Artemis_I_Orion_in_space_animation4K_2021'}}),
+  clip('landing','landing','OCEAN OF STORMS · DAYS LATER',{
+    chapter:['Chapter 2','Into the Ocean of Storms'],
+    credit:{credit:'Orion reference animation · NASA',source:'https://images.nasa.gov/details/Artemis_I_Orion_in_space_animation4K_2021'}})
 ];
 const callClips=[
   clip('callYuva','moonReport','YUVA · LUNAR UPLINK'),
-  clip('callEdith','marsDescent','E.D.I.T.H. · MARS · MONTHS LATER'),
+  clip('callEdith','marsDescent','E.D.I.T.H. · MARS · MONTHS LATER',{chapter:['Chapter 3','The last signal on Mars']}),
   clip('cameraLink','cameraLink','E.D.I.T.H. · OPTICAL HANDOFF')
 ];
 const returnClips=[
-  clip('depart','depart','EARTH ORBIT · 2045'),
+  clip('depart','depart','EARTH ORBIT · 2045',{chapter:['Chapter 4','A light-day from home']}),
   clip('depart','news','RETURN CABIN · ARCHIVE NEWS',{news:true}),
   clip('stars','imagine','YUVA’S IMAGINATION · THE VOYAGERS',{credit:voyagerCredit}),
   clip('record','record','YUVA’S IMAGINATION · GOLDEN RECORD',{credit:voyagerCredit}),

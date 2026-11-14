@@ -16,8 +16,15 @@ const ffmpeg=process.env.FFMPEG_PATH || 'ffmpeg';
 const excerpts={
   'opening-film':[
     ['flightArchive',0,5.5,'echoes-artemis2.mp4',15,'crop=1728:972:96:0,'],
-    ['signal',0,10.75,'echoes-cockpit.mp4',1,'hflip,eq=saturation=.65,'],
-    ['launch',0,4.75,'echoes-helmet.mp4',12,'hflip,eq=saturation=.65,']
+    ['signal',0,8,'echoes-cockpit.mp4',1,'hflip,eq=saturation=.65,'],
+    ['signal',8,99,'echoes-orion.mp4',12],
+    ['trainingMoon',0,7,'echoes-training.mp4',191],
+    ['trainingMoon',7,99,'echoes-apollo12.m4v',1],
+    ['trainingMars',6.4,99,'echoes-mars-storm.mp4',2],
+    ['launch',0,4.5,'echoes-helmet.mp4',12,'hflip,eq=saturation=.65,'],
+    ['launch',4.5,99,'echoes-artemis2.mp4',19.5,'crop=1728:972:96:0,'],
+    ['split',0,5.5,'echoes-orion.mp4',43],
+    ['landing',0,3,'echoes-orion.mp4',83]
   ],
   'transfer-film':[['moonReport',0,6.4,'echoes-helmet.mp4',4,'hflip,eq=saturation=.62,']],
   'record-apollo':[['apollo',0,9.65,'echoes-apollo12.m4v',0]],
@@ -25,7 +32,7 @@ const excerpts={
   'return-film':[
     ['news',7,15.8,'echoes-cockpit.mp4',8.7,'hflip,eq=saturation=.65,'],
     ['imagine',0,5.65,'echoes-voyager-2.mp4',5],
-    ['imagine',5.65,11.318,'echoes-voyager-5.mp4',7],
+    ['imagine',5.65,99,'echoes-voyager-5.mp4',4],
     ['record',0,9.8,'echoes-voyager-3.mp4',0],
     ['reunion',2,7.5,'echoes-cockpit.mp4',0,'hflip,eq=saturation=.6,']
   ]
@@ -51,14 +58,16 @@ async function assemble(name,clips) {
     let frame=0, archiveInput=0;
     function segment(input,start,end,preprocess='') {
       const label='segment'+segments.length;
-      filters.push('['+input+':v]'+preprocess+'fps='+rate+',scale=960:540,setsar=1,format=yuv420p,trim=start_frame='+start+
+      filters.push('['+input+':v]'+preprocess+'fps='+rate+',scale=1280:720,setsar=1,format=yuv420p,trim=start_frame='+start+
         (end===undefined?'':':end_frame='+end)+',setpts=PTS-STARTPTS['+label+']');
       segments.push('['+label+']');
     }
     for(const [cue,start,end,filename,sourceStart,preprocess] of archiveClips){
       const cut=cueTime(clips,cue);
+      const length=clips.find(clip=>(clip.id||clip.voice)===cue).duration;
       const startFrame=Math.round((cut+start)*rate);
-      const endFrame=Math.round((cut+end)*rate);
+      const endFrame=Math.round((cut+Math.min(end,length))*rate);
+      if(startFrame>=endFrame)continue;
       if(frame<startFrame)segment(0,frame,startFrame);
       input.push('-ss',String(sourceStart),'-i',join(archive,filename));
       segment(++archiveInput,0,endFrame-startFrame,preprocess);
@@ -136,7 +145,7 @@ async function encode(page,name,clips) {
   const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,
     args:['--enable-unsafe-swiftshader']});
   try{
-    const page=await browser.newPage({viewport:{width:960,height:540},deviceScaleFactor:1});
+    const page=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
     page.on('pageerror',e=>console.error(e.message));
     await page.goto(base+'?render');
     await page.waitForFunction(()=>typeof window.renderScene==='function');

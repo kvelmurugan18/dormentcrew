@@ -112,24 +112,26 @@ const marsStops=[
 ];
 function heightAt(x,z,kind){
   const isMars=kind==='mars';
-  let y=Math.sin(x*.17+z*.063)*.4+Math.sin(z*.16-x*.04)*.46+Math.sin(x*.42+z*.29)*.12;
-  if(isMars)y+=Math.exp(-((x+14)**2/100+(z+14)**2/155))*1.48;
-  if(kind==='moon'){
-    const distance=Math.hypot(x+25,z+28);
-    y+=Math.exp(-((distance-8)**2)/2.8)*.65-Math.exp(-(distance**2)/29)*.85;
+  if(!isMars){
+    const u=clamp(x+120,0,239.999),v=clamp(z+148,0,239.999);
+    const col=Math.floor(u),row=Math.floor(v),i=row*241+col;
+    const top=mix(lunarElevation[i],lunarElevation[i+1],u-col);
+    const bottom=mix(lunarElevation[i+241],lunarElevation[i+242],u-col);
+    return mix(top,bottom,v-row)*.01;
   }
-  return y;
+  return Math.sin(x*.17+z*.063)*.4+Math.sin(z*.16-x*.04)*.46+
+    Math.sin(x*.42+z*.29)*.12+Math.exp(-((x+14)**2/100+(z+14)**2/155))*1.48;
 }
 function terrain(scene,kind){
   const mars=kind==='mars',rnd=rng(mars?844:45);
-  const geometry=new T.PlaneGeometry(238,238,146,146);
+  const geometry=new T.PlaneGeometry(238,238,mars?146:238,mars?146:238);
   geometry.rotateX(-Math.PI/2);geometry.translate(0,0,-28);
   const position=geometry.attributes.position, colors=[];
   const color=new T.Color();
   for(let i=0;i<position.count;i++){
     const x=position.getX(i),z=position.getZ(i),y=heightAt(x,z,kind);
     position.setY(i,y);
-    color.set(mars?0xd78c61:0xb1b3b8).multiplyScalar(.82+rnd()*.24+.06*Math.sin(x*.53+z*.29));
+    color.set(mars?0xd78c61:0xc0beb9).multiplyScalar(.89+rnd()*.16+.055*Math.sin(x*.19+z*.23));
     colors.push(color.r,color.g,color.b);
   }
   geometry.computeVertexNormals();
@@ -142,29 +144,36 @@ function terrain(scene,kind){
     texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(47,47);
     texture.anisotropy=4;
   }
-  const soil=new T.MeshStandardMaterial({vertexColors:true,map:grit,normalMap:normal,normalScale:new T.Vector2(.65,.65),roughness:.99});
+  const normalStrength=mars?.65:.42;
+  const soil=new T.MeshStandardMaterial({vertexColors:true,map:grit,normalMap:normal,normalScale:new T.Vector2(normalStrength,normalStrength),roughness:.99});
   if(!mars){
     soil.onBeforeCompile=shader=>{
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',
         `#include <map_fragment>
         float lunarLuminance=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-        diffuseColor.rgb=vec3(lunarLuminance*1.13);`);
+        diffuseColor.rgb=vec3(pow(lunarLuminance,.78)*1.20);`);
     };
   }
   const floor=mesh(scene,geometry,soil);
   floor.castShadow=false;
-  const rockGeo=new T.IcosahedronGeometry(1,1);
+  const rockGeo=new T.IcosahedronGeometry(1,3);
+  const vertices=rockGeo.attributes.position;
+  for(let i=0;i<vertices.count;i++){
+    const x=vertices.getX(i),y=vertices.getY(i),z=vertices.getZ(i);
+    const shape=1+.12*Math.sin(x*8.7+y*11.2)*Math.cos(z*6.7)+.11*Math.cos(x*3.3+z*5.1);
+    vertices.setXYZ(i,x*shape,y*shape,z*shape);
+  }
   rockGeo.computeVertexNormals();
   const stones=new T.InstancedMesh(rockGeo,mat(mars?0x794132:0x515258),490);
   const dummy=new T.Object3D();
   for(let i=0;i<490;i++){
-    const x=(rnd()-.5)*110,z=rnd()*105-79,s=.09+rnd()**3*.84;
+    const x=(rnd()-.5)*110,z=rnd()*105-79,s=.045+rnd()**3*(mars?.84:.47);
     dummy.position.set(x,heightAt(x,z,kind)+.10*s,z);
     dummy.scale.set(s*(.8+rnd()),s*.58,s);dummy.rotation.set(rnd(),rnd()*TAU,rnd());
     dummy.updateMatrix();stones.setMatrixAt(i,dummy.matrix);
   }
   stones.receiveShadow=true;scene.add(stones);
-  for(let i=0;i<41;i++){
+  for(let i=0;i<(mars?41:0);i++){
     const a=TAU*i/41,r=80+rnd()*27;
     const hill=mesh(scene,new T.IcosahedronGeometry(1,1),mat(mars?0x844932:0x454954),Math.cos(a)*r,-1,-25+Math.sin(a)*r);
     hill.scale.set(9+rnd()*16,1.5+rnd()*(mars?11:6),7+rnd()*13);
@@ -184,13 +193,13 @@ function routeBeacon(scene,x,z,kind,large=false){
 }
 function surface(kind){
   const scene=new T.Scene(),mars=kind==='mars';
-  scene.background=new T.Color(mars?0x9a694e:0x070e1b);
-  scene.fog=new T.FogExp2(mars?0x9a694e:0x151d2a,mars?.014:.0057);
-  if(!mars)starfield(scene,34);
-  lighting(scene,mars?0xffcb93:0xa4bcf0,mars?0x934834:0x686166,mars?0xffd5a7:0xfff3dc,2.2,true);
+  scene.background=new T.Color(mars?0x9a694e:0x010102);
+  if(mars)scene.fog=new T.FogExp2(0x9a694e,.014);
+  const sun=lighting(scene,mars?0xffcb93:0xa4bcf0,mars?0x934834:0x686166,mars?0xffd5a7:0xfff4e1,2.2,true);
+  if(!mars)sun.position.set(-55,26,-3);
   terrain(scene,kind);
   if(!mars){
-    const earth=planet(scene,'earth',13,-51,37,-126,true);
+    const earth=planet(scene,'earth',2.55,-42,35,-123,false);
     const material=earth.children[0].material;
     material.fog=false;material.emissive.set(0xb4d0ff);
     material.emissiveMap=material.map;material.emissiveIntensity=.48;
@@ -200,6 +209,7 @@ function surface(kind){
   const stops=mars?marsStops:moonStops;
   const models=mars?[null,rover(scene,false),null]:[surveyorModel(scene),apolloModel(scene),alsepModel(scene)];
   if(mars)mountRover(models[1]);
+  else mountDescentStage(models[1]);
   const beacons=[];
   let last=[0,8];
   stops.forEach((stop,i)=>{
@@ -209,10 +219,10 @@ function surface(kind){
       models[i].rotation.y=Math.PI*.85;
     }
     if(stop.radius){
-      for(let j=0;j<26;j++){
-        const a=j*TAU/26,px=x+Math.sin(a)*stop.radius,pz=z+Math.cos(a)*stop.radius;
+      for(let j=0;j<10;j++){
+        const a=j*TAU/10,px=x+Math.sin(a)*stop.radius,pz=z+Math.cos(a)*stop.radius;
         const y=heightAt(px,pz,kind);
-        tube(scene,.037,.048,.43,amber,px,y+.215,pz,5);
+        tube(scene,.024,.031,.24,mat(0xcfb104,0,.18),px,y+.12,pz,6);
       }
     }
     const markers=[];

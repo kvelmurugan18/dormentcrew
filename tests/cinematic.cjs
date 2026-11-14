@@ -23,6 +23,7 @@ async function run() {
     await begin.click();
     const playing=()=>page.waitForFunction(()=>filmPlaying && film.currentTime>.25 && !film.paused && film.videoWidth>0);
     await playing();
+    await page.getByText('Two worlds go quiet',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Pause',exact:true}).click();
     assert.equal(await page.evaluate(()=>film.paused),true);
     await page.getByRole('button',{name:'Resume',exact:true}).click();
@@ -42,14 +43,33 @@ async function run() {
       await page.waitForFunction(()=>field.actor.children.some(child=>child.isGroup&&child.children.some(mesh=>mesh.geometry?.attributes.position.count>1000)));
     }
     await screenshot(page,'final-moon');
-    const explore=async(labels)=>{
-      for(const label of labels) {
+    const explore=async(stops)=>{
+      for(const [label,photo] of stops) {
         await page.locator('#target').getByText(label,{exact:true}).waitFor();
         await navigate.click();
         await inspect.waitFor({timeout:30000});
         await inspect.click();
-        await playing();
-        await skip.click();
+        const inspection=page.getByRole('dialog',{name:/field inspection/});
+        await inspection.waitFor();
+        const image=inspection.locator('img');
+        await image.evaluate(img=>img.decode());
+        assert.match(await image.getAttribute('src'),new RegExp('/'+photo+'$'));
+        assert.ok((await inspection.locator('article p').innerText()).length>30);
+        if(label==='Apollo 12'){
+          await page.waitForFunction(()=>field.models[1].children.some(part=>part.isGroup&&part.children.length>30));
+        }
+        if(label==='Surveyor 3'){
+          await page.waitForFunction(()=>activeVoice==='surveyor'&&voice.currentTime>.2&&!voice.paused);
+          await screenshot(page,'field-inspection');
+          await page.keyboard.press('Escape');
+          await inspection.waitFor({state:'hidden'});
+          await inspect.click();
+          await inspection.getByRole('button',{name:'Watch replay'}).click();
+          await playing();
+          await skip.click();
+          await inspection.waitFor();
+        }
+        await inspection.getByRole('button',{name:'Next waypoint →'}).click();
       }
     };
     const archive=async(total)=>{
@@ -64,8 +84,7 @@ async function run() {
     await page.keyboard.down('KeyW');
     await page.waitForFunction(()=>player.z<7);
     await page.keyboard.up('KeyW');
-    await explore(['Surveyor 3','Apollo 12','Apollo 12 ALSEP']);
-    await archive(3);
+    await explore([['Surveyor 3','surveyor.webp'],['Apollo 12','intrepid.jpg'],['Apollo 12 ALSEP','alsep-station.jpg']]);
     await playing();
     await skip.click();
     await page.waitForFunction(()=>mode==='field'&&field.kind==='mars');
@@ -75,8 +94,7 @@ async function run() {
     await page.reload();
     await page.getByRole('button',{name:'Resume mission'}).click();
     await page.waitForFunction(()=>mode==='field'&&field.kind==='mars');
-    await explore(['Perseverance Valley overlook','Opportunity','Last signal overlook']);
-    await archive(7);
+    await explore([['Perseverance Valley overlook','marsmap.jpg'],['Opportunity','opportunity-deck.jpg'],['Last signal overlook','last.jpg']]);
     await archive(5);
     await page.waitForFunction(()=>sequence[0].shot==='depart');
     await page.evaluate(()=>{film.playbackRate=3;});

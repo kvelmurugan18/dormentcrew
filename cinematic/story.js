@@ -1,9 +1,9 @@
 'use strict';
 
 const lines = {
-  signal: ['MISSION CONTROL', 'Earth, 2042. Two silences in the NASA archive tell very different stories. Surveyor Three went quiet as lunar night began. Decades later, the last image from Opportunity broke up in a dust storm. Your mission is to find both sites and follow the evidence.'],
-  trainingMoon: ['YUVA', 'I am training on the Apollo Twelve orbital photograph. The lander, the footprints and the experiments each give me a landmark. On the Moon, I will follow the protected route to Surveyor Crater.'],
-  trainingMars: ['E.D.I.T.H.', 'I am tracing Opportunity’s last route. During the storm, the camera could barely see the Sun. I will use the ridge above Perseverance Valley to reach a safe viewing point.'],
+  signal: ['MISSION CONTROL', 'Two machines went quiet on two different worlds. On the Moon, Surveyor Three fell silent at sunset. On Mars, Opportunity lost power in a dust storm. Yuva and Edith, find out what their last signals can tell us.'],
+  trainingMoon: ['YUVA', 'In training, I practice matching a picture to what I see out the window. Find the crater rim. Then find the tracks. Those landmarks will guide me to Surveyor Three.'],
+  trainingMars: ['E.D.I.T.H.', 'My training starts with Opportunity’s route. See that yellow line? It ends inside Perseverance Valley. I’ll stop on the ridge where I can see the rover and keep clear of its tracks.'],
   launch: ['MISSION CONTROL', 'Launch is clear. One rocket, two spacecraft. Yuva, you are headed for the Moon. Edith, after separation, you are headed for Mars.'],
   split: ['E.D.I.T.H.', 'Both spacecraft are clear. Yuva, you land in days. My descent comes months later. I will send you the archive from the transit leg.'],
   landing: ['YUVA', 'Lunar descent complete. I have the orbital map on my display. Surveyor Crater is our first stop.'],
