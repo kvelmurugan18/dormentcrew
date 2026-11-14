@@ -144,7 +144,7 @@ function startInterview() {
   changeMode('quiz');
   $('feed').textContent = 'EARTH · 2045 · YUVA LIVE';
   if(!reduce){
-    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4?v=terrain';
+    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4?v=night';
     interviewVideo.hidden=false;
     interviewVideo.play().catch(()=>{interviewVideo.hidden=true;});
   }

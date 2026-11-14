@@ -15,6 +15,9 @@ async function run() {
       if(response.status()>=400 && !response.url().endsWith('favicon.ico')) problems.push(response.status()+' '+response.url());
     });
     await page.goto(base);
+    const particles=page.locator('#ambient-particles');
+    await particles.waitFor();
+    assert.equal(await particles.locator('i').count(),32);
     await screenshot(page,'final-title');
     const begin=page.getByRole('button',{name:'Begin mission'});
     const skip=page.getByRole('button',{name:/Skip scene/});
@@ -39,6 +42,8 @@ async function run() {
     await screenshot(page,'final-briefing');
     await skip.click();
     await page.waitForFunction(()=>mode==='field'&&field.kind==='moon');
+    await particles.waitFor({state:'hidden'});
+    await page.waitForFunction(()=>field.scene.background?.image?.naturalWidth===4096);
     if(base.startsWith('http')) {
       await page.waitForFunction(()=>field.actor.children.some(child=>child.isGroup&&child.children.some(mesh=>mesh.geometry?.attributes.position.count>1000)));
     }
@@ -88,6 +93,7 @@ async function run() {
     await playing();
     await skip.click();
     await page.waitForFunction(()=>mode==='field'&&field.kind==='mars');
+    await page.waitForFunction(()=>field.scene.background?.image?.naturalWidth===4096);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await page.waitForFunction(()=>field.models[1].children.some(child=>child.isGroup&&child.visible&&child.name!==''));
     await screenshot(page,'final-mars');
@@ -121,6 +127,7 @@ async function run() {
       await page.getByRole('button',{name:i===5?'Finish interview →':'Next question →'}).click();
     }
     await page.getByRole('heading',{name:'Transmission complete.'}).waitFor();
+    await particles.waitFor();
     assert.equal(await page.locator('#scoreline').innerText(),'5 / 6 correct on the first answer');
     await page.getByRole('button',{name:'Replay mission'}).click();
     await begin.waitFor();

@@ -4,12 +4,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#070c10"><meta name="description" content="Follow Yuva and E.D.I.T.H. from lunar night to the last signal on Mars. An interactive film grounded in NASA mission records.">
 <title>ECHOES — The Last Transmission</title>
-<link rel="stylesheet" href="cinematic/game.css"><link rel="stylesheet" href="cinematic/final.css?v=terrain">
+<link rel="stylesheet" href="cinematic/game.css"><link rel="stylesheet" href="cinematic/final.css?v=night">
 <script defer src="cinematic/assets/three.min.js"></script>
 <script defer src="cinematic/earth.js"></script><script defer src="cinematic/sky.js"></script>
-<script defer src="cinematic/archive-data.js?v=terrain"></script><script defer src="cinematic/story.js?v=terrain"></script><script defer src="cinematic/timings.js?v=terrain"></script>
+<script defer src="cinematic/archive-data.js?v=terrain"></script><script defer src="cinematic/story.js?v=terrain"></script><script defer src="cinematic/timings.js?v=night"></script>
 <script defer src="cinematic/lunar-terrain.js"></script>
-<script defer src="cinematic/assets/final/model-loader.js"></script><script defer src="cinematic/actor.js?v=terrain"></script><script defer src="cinematic/models.js?v=terrain"></script><script defer src="cinematic/world.js?v=terrain"></script><script defer src="cinematic/shots.js?v=terrain"></script><script defer src="cinematic/direction.js?v=terrain"></script><script defer src="cinematic/panels.js?v=terrain"></script><script defer src="cinematic/game.js?v=terrain"></script>
+<script defer src="cinematic/assets/final/model-loader.js"></script><script defer src="cinematic/actor.js?v=terrain"></script><script defer src="cinematic/models.js?v=terrain"></script><script defer src="cinematic/world.js?v=night"></script><script defer src="cinematic/shots.js?v=terrain"></script><script defer src="cinematic/direction.js?v=terrain"></script><script defer src="cinematic/panels.js?v=night"></script><script defer src="cinematic/game.js?v=night"></script>
 </head>
 <body>
 <main id="screen" aria-label="ECHOES mission">
@@ -18,6 +18,7 @@
   <video id="interview-video" playsinline muted loop preload="none" aria-hidden="true" hidden></video>
   <div id="plate" aria-hidden="true" hidden></div>
   <div class="grade" aria-hidden="true"></div><div id="bars" class="bars" aria-hidden="true"></div>
+  <div id="ambient-particles" aria-hidden="true" hidden></div>
   <div id="cut" aria-hidden="true"></div>
   <div id="visor" aria-hidden="true" hidden><span></span></div>
   <header class="top">

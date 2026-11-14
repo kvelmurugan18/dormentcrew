@@ -19,8 +19,8 @@ const excerpts={
     ['signal',0,8,'echoes-cockpit.mp4',1,'hflip,eq=saturation=.65,'],
     ['signal',8,99,'echoes-orion.mp4',12],
     ['trainingMoon',0,7,'echoes-training.mp4',191],
-    ['trainingMoon',7,99,'echoes-apollo12.m4v',1],
-    ['trainingMars',6.4,99,'echoes-mars-storm.mp4',2],
+    ['trainingMoon',7,16.9,'echoes-apollo12.m4v',0],
+    ['trainingMars',6.4,99,'echoes-mars-storm.mp4',0],
     ['launch',0,4.5,'echoes-helmet.mp4',12,'hflip,eq=saturation=.65,'],
     ['launch',4.5,99,'echoes-artemis2.mp4',19.5,'crop=1728:972:96:0,'],
     ['split',0,5.5,'echoes-orion.mp4',43],
@@ -32,7 +32,7 @@ const excerpts={
   'return-film':[
     ['news',7,15.8,'echoes-cockpit.mp4',8.7,'hflip,eq=saturation=.65,'],
     ['imagine',0,5.65,'echoes-voyager-2.mp4',5],
-    ['imagine',5.65,99,'echoes-voyager-5.mp4',4],
+    ['imagine',5.65,99,'echoes-voyager-5.mp4',1],
     ['record',0,9.8,'echoes-voyager-3.mp4',0],
     ['reunion',2,7.5,'echoes-cockpit.mp4',0,'hflip,eq=saturation=.6,']
   ]

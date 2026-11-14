@@ -81,7 +81,7 @@ function updateCaption(second){
 function talk(id){
   voice.pause();caption(id);
   if(!id||capture||filmPlaying)return;
-  voice.src='cinematic/assets/'+id+'.wav?v=terrain';
+  voice.src='cinematic/assets/'+id+'.wav?v=night';
   voice.play().catch(()=>{});
 }
 function changeMode(next){
@@ -91,6 +91,7 @@ function changeMode(next){
   }
   mode=next;
   screen.dataset.mode=next;
+  $('ambient-particles').hidden=next!=='menu'&&next!=='end';
   $('interview').hidden=next!=='quiz';
   $('menu-sources').hidden=next!=='menu';
   $('news').hidden=true;
@@ -151,7 +152,7 @@ function showSequence(clips,onDone,media=''){
   if(filmPlaying){
     failedMedia=media;
     score.pause();
-    film.src=finalAssets+media+'.mp4?v=terrain';
+    film.src=finalAssets+media+'.mp4?v=night';
     film.hidden=false;
     film.play().catch(()=>{
       if(generation===filmGeneration) recoverFilm();
@@ -542,6 +543,22 @@ function reset(){
   $('feed').textContent='';
   $('start').focus();
 }
+
+function seedAmbientParticles(){
+  const random=rng(2240);
+  const particles=document.createDocumentFragment();
+  for(let i=0;i<32;i++){
+    const particle=document.createElement('i');
+    particle.style.setProperty('--x',random()*100+'%');
+    particle.style.setProperty('--y',(10+random()*100)+'%');
+    particle.style.setProperty('--size',(1+random()*2.3)+'px');
+    particle.style.setProperty('--light',.38+random()*.54);
+    particle.style.setProperty('--time',(12+random()*13)+'s');
+    particle.style.setProperty('--delay',(-random()*26)+'s');
+    particles.append(particle);
+  }
+  $('ambient-particles').append(particles);
+}
 function offerLowGraphics(resume) {
   if(resume&&checkpoint?.chapter==='interview'){startInterview();return;}
   if(resume&&checkpoint?.chapter==='return'){startReturn();return;}
@@ -626,6 +643,7 @@ if(capture && canRender){
     return canvas.toDataURL('image/jpeg',.89).split(',')[1];
   };
 }else{
+  seedAmbientParticles();
   reset();
   $('continue').hidden=!checkpoint;
   requestAnimationFrame(frame);

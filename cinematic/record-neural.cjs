@@ -8,14 +8,15 @@ async function record() {
   const tts=await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{dtype:'q8',device:'cpu'});
   const roles={
     'MISSION CONTROL':'af_heart',
-    'E.D.I.T.H.':'af_bella',
+    'E.D.I.T.H.':'af_sky',
     'YUVA':'af_nicole',
     'NEWS REPORTER':'af_heart'
   };
   for(const [id,[role,line]] of Object.entries(dialogue)){
-    const text=line.replaceAll('Yuva','Yoo-vah').replaceAll('ALSEP','Al-sep').replaceAll('2042','twenty forty-two')
+    const text=line.replaceAll('ALSEP','Al-sep').replaceAll('2042','twenty forty-two')
       .replaceAll('2045','twenty forty-five').replaceAll('E.D.I.T.H.','Edith');
-    const sound=await tts.generate(text,{voice:roles[role],speed:role==='YUVA'?1.02:.98});
+    const speed=role==='E.D.I.T.H.'?1.04:role==='YUVA'?.90:.85;
+    const sound=await tts.generate(text,{voice:roles[role],speed});
     const {audio,sampling_rate:rate}=sound;
     if(audio.length<2048)throw Error('Missing audio for '+id);
     const wav=Buffer.alloc(44+audio.length*2);

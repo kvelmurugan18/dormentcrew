@@ -191,20 +191,26 @@ function routeBeacon(scene,x,z,kind,large=false){
   }
   return beacon;
 }
+let expeditionSky;
+function useNightSky(scene){
+  expeditionSky??=new T.TextureLoader().load(finalAssets+'milky-way-4k.webp');
+  expeditionSky.mapping=T.EquirectangularReflectionMapping;
+  expeditionSky.colorSpace=T.SRGBColorSpace;
+  scene.background=expeditionSky;
+  scene.backgroundIntensity=.52;
+}
 function surface(kind){
   const scene=new T.Scene(),mars=kind==='mars';
-  scene.background=new T.Color(mars?0x9a694e:0x010102);
-  if(mars)scene.fog=new T.FogExp2(0x9a694e,.014);
-  const sun=lighting(scene,mars?0xffcb93:0xa4bcf0,mars?0x934834:0x686166,mars?0xffd5a7:0xfff4e1,2.2,true);
-  if(!mars)sun.position.set(-55,26,-3);
+  useNightSky(scene);
+  if(mars)scene.fog=new T.FogExp2(0x181724,.009);
+  const sun=lighting(scene,mars?0x8d9ec7:0xa4bcf0,mars?0x493039:0x686166,mars?0xffd1a3:0xfff4e1,mars?.95:2.2,true);
+  sun.position.set(-55,26,-3);
   terrain(scene,kind);
   if(!mars){
     const earth=planet(scene,'earth',2.55,-42,35,-123,false);
     const material=earth.children[0].material;
     material.fog=false;material.emissive.set(0xb4d0ff);
     material.emissiveMap=material.map;material.emissiveIntensity=.48;
-  }else{
-    ball(scene,3.3,new T.MeshBasicMaterial({color:0xffc890,fog:false}),-52,26,-128);
   }
   const stops=mars?marsStops:moonStops;
   const models=mars?[null,rover(scene,false),null]:[surveyorModel(scene),apolloModel(scene),alsepModel(scene)];
