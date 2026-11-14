@@ -1,9 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
-const screen=$('screen'), canvas=$('world'), film=$('film');
+const screen=$('screen'), canvas=$('world'), film=$('film'), interviewVideo=$('interview-video');
 const voice = new Audio(), score = new Audio('cinematic/assets/score.wav');
 score.loop=true;score.volume=.21;
-let muted=false, captions=false, paused=false, resumeFocus, activeVoice='', started=false;
+let muted=false, captions=true, paused=false, resumeFocus, activeVoice='', started=false;
 let mode='menu', field, index=0, sequence=null, sequenceNext, shotIndex=0, shotTime=0, totalTime=0;
 let renderer, orbit, lunar, martian, arrival;
 const camera=new T.PerspectiveCamera(52,1,.08,480);
@@ -12,9 +12,14 @@ const player={x:0,z:8,yaw:0,facing:0,move:0};
 let near=false, warning=0, dragging=null, filmPlaying=false, routeStep=0;
 const held=new Set(), touches=new Map();
 const capture=new URLSearchParams(location.search).has('render');
+let filmGeneration=0;
+let failedMedia='';
+let dialogueCues=[];
+let visibleCue=-1;
+
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const filmDuration=introClips.reduce((a,c)=>a+c.duration,0);
-const openingPath='cinematic/assets/opening.webm';
+let autoNavigate=false;
+const escapeStage = () => !paused && !$('archive').open;
 
 function initRenderer(){
   try{
@@ -27,7 +32,6 @@ function initRenderer(){
     return true;
   }catch(error){
     console.error('Unable to initialize the 3D scene.',error);
-    $('unsupported').hidden=false;
     return false;
   }
 }
@@ -49,19 +53,51 @@ function setAudio(){
 }
 function caption(id){
   activeVoice=id||'';
-  $('subtitles').hidden=!captions||!lines[activeVoice];
-  if(lines[activeVoice]){
-    [$('speaker').textContent,$('speech').textContent]=lines[activeVoice];
-  }
+  const line=lines[activeVoice];
+  $('subtitles').hidden=!captions||!line;
+  dialogueCues=[];
+  visibleCue=-1;
+  if(!line)return;
+  $('speaker').textContent=line[0];
+  const parts=line[1].split(/(?<=[.!?])\s+(?=[A-Z])/);
+  const words=part=>part.trim().split(/\s+/).length;
+  const totalWords=parts.reduce((count,part)=>count+words(part),0);
+  const duration=voiceTimes[activeVoice]||3;
+  let end=0;
+  dialogueCues=parts.map(part=>{
+    end+=words(part)/totalWords*duration;
+    return {text:part,end};
+  });
+  updateCaption(0);
+}
+function updateCaption(second){
+  if(!dialogueCues.length)return;
+  const cue=dialogueCues.findIndex(segment=>second<segment.end);
+  if(cue===visibleCue)return;
+  visibleCue=cue;
+  $('subtitles').hidden=!captions||cue<0;
+  if(cue>=0)$('speech').textContent=dialogueCues[cue].text;
 }
 function talk(id){
   voice.pause();caption(id);
   if(!id||capture||filmPlaying)return;
-  voice.src='cinematic/assets/'+id+'.wav';
+  voice.src='cinematic/assets/'+id+'.wav?v=2042';
   voice.play().catch(()=>{});
 }
 function changeMode(next){
+  if(next!=='quiz'&&next!=='end'){
+    interviewVideo.pause();
+    interviewVideo.hidden=true;
+  }
   mode=next;
+  screen.dataset.mode=next;
+  $('interview').hidden=next!=='quiz';
+  $('menu-sources').hidden=next!=='menu';
+  $('news').hidden=true;
+  $('film-error').hidden=true;
+  $('scene-credit').hidden=true;
+  displayPlate('',false);
+  autoNavigate=false;
   screen.classList.toggle('playing',next==='field');
   screen.classList.toggle('mars',next==='field'&&field?.kind==='mars');
   $('menu').hidden=next!=='menu';
@@ -75,52 +111,102 @@ function changeMode(next){
     $('cut').classList.remove('flash');void $('cut').offsetWidth;$('cut').classList.add('flash');
   }
 }
+function displayPlate(art,generated) {
+  const image=$('plate');
+  image.hidden=!art;
+  image.style.transform='';
+  image.style.backgroundImage=art ? 'url("'+finalAssets+art+'")' : '';
+  $('art-credit').hidden=!generated;
+}
 function enterShot(clip){
   $('scene-name').textContent=clip.label;
   $('feed').textContent=clip.label;
-  $('sky-credit').hidden=clip.shot!=='stars';
+  displayPlate('',false);
+  $('news').hidden=!clip.news;
+  const credit=$('scene-credit');
+  credit.hidden=!clip.credit;
+  if(clip.credit){
+    credit.textContent=clip.credit.credit;
+    credit.href=clip.credit.source;
+  }
+  $('sky-credit').hidden=filmPlaying||clip.shot!=='stars';
   talk(clip.voice);
 }
-function showSequence(clips,onDone){
-  sequence=clips;sequenceNext=onDone;shotIndex=0;shotTime=0;totalTime=0;
-  $('time').style.width='0%';changeMode('movie');enterShot(clips[0]);
+function showSequence(clips,onDone,media=''){
+  sequence=clips;
+  sequenceNext=onDone;
+  shotIndex=0;
+  shotTime=0;
+  totalTime=0;
+  const generation=++filmGeneration;
+  filmPlaying=Boolean(media)&&!capture;
+  $('time').style.width='0%';
+  changeMode('movie');
+  enterShot(clips[0]);
+  if(filmPlaying){
+    failedMedia=media;
+    score.pause();
+    film.src=finalAssets+media+'.mp4';
+    film.hidden=false;
+    film.play().catch(()=>{
+      if(generation===filmGeneration) recoverFilm();
+    });
+  }
   if(!capture)$('skip').focus({preventScroll:true});
 }
+function recoverFilm(){
+  if(!sequence||!filmPlaying)return;
+  filmPlaying=false;
+  film.hidden=true;
+  if(!renderer){
+    $('film-error').hidden=false;
+    caption('');
+    return;
+  }
+  if(!paused){
+    score.play().catch(()=>{});
+    enterShot(sequence[shotIndex]);
+  }
+}
+film.addEventListener('error',recoverFilm);
 function nextSequence(){
   if(!sequence)return;
   const done=sequenceNext;
-  sequence=null;film.pause();filmPlaying=false;film.hidden=true;
-  talk('');done();
+  ++filmGeneration;
+  sequence=null;
+  film.pause();
+  filmPlaying=false;
+  film.hidden=true;
+  film.removeAttribute('src');
+  film.load();
+  if(!muted&&!paused) score.play().catch(()=>{});
+  talk('');
+  done();
 }
 function showIntro(){
-  if(!film.error&&!capture){
-    film.currentTime=0;filmPlaying=true;film.hidden=false;
-    score.pause();film.play().catch(()=>{
-      if(!filmPlaying)return;
-      filmPlaying=false;film.hidden=true;score.play().catch(()=>{});
-      if(sequence)enterShot(sequence[shotIndex]);
-    });
-  }
-  showSequence(introClips,()=>enterField('moon'));
+  showSequence(introClips,()=>enterField('moon'),'opening-film');
 }
 function updateSequence(dt){
-  if(!sequence)return;
+  if(!sequence||!$('film-error').hidden)return;
   const length=sequence.reduce((sum,clip)=>sum+clip.duration,0);
   if(filmPlaying){
     if(film.ended){nextSequence();return;}
     totalTime=film.currentTime;
   }else totalTime+=dt;
   if(totalTime>=length){nextSequence();return;}
-  let offset=totalTime, index=0;
+  let offset=totalTime,index=0;
   while(offset>=sequence[index].duration){offset-=sequence[index++].duration;}
   if(index!==shotIndex){shotIndex=index;enterShot(sequence[index]);}
   shotTime=offset;
+  updateCaption(shotTime);
   $('time').style.width=(totalTime/length*100)+'%';
 }
-function enterField(kind){
-  field=zone(kind);index=0;
-  Object.assign(player,{x:0,z:8,yaw:0,facing:0,move:0});
-  field.models.at(-1).userData.signal.material=amber;
+function enterField(kind,savedIndex=0){
+  field=zone(kind);
+  index=clamp(savedIndex,0,field.stops.length-1);
+  const origin=index ? field.stops[index-1].point : [0,8];
+  Object.assign(player,{x:origin[0],z:origin[1],yaw:0,facing:0,move:0});
+  saveCheckpoint(kind,index);
   for(const markers of field.beacons)for(const beacon of markers)beacon.visible=false;
   changeMode('field');objective();talk(kind==='moon'?'moonStart':'marsStart');
   if(!capture)score.play().catch(()=>{});
@@ -129,13 +215,14 @@ function enterField(kind){
 function objective(){
   const stop=field.stops[index], isMars=field.kind==='mars';
   near=false;warning=0;routeStep=0;
-  $('feed').textContent=isMars?'ECHO-7 · OPTICAL FEED':'ARIA MORGAN · LUNAR SURFACE';
-  $('actor').textContent=(isMars?'ECHO-7 POV':'ARIA · EVA')+' / '+(index+1)+' OF '+field.stops.length;
+  $('feed').textContent=isMars?'E.D.I.T.H. · PERSEVERANCE VALLEY':'YUVA · OCEAN OF STORMS';
+  $('actor').textContent=(isMars?'E.D.I.T.H. CAMERA':'YUVA · EVA')+' / '+(index+1)+' OF '+field.stops.length;
   $('target').textContent=stop.label;
   $('steps').innerHTML=field.stops.map((_,i)=>'<i class="'+(i===index?'active':i<index?'done':'')+'"></i>').join('');
   field.beacons.forEach((markers,i)=>markers.forEach(beacon=>{beacon.visible=i===index;}));
   $('hint').textContent='';$('interact').hidden=true;
-  $('interact').textContent=stop.id.endsWith('Relay')?'Activate relay · F':'Inspect · F';
+  $('interact').textContent='Inspect · F';
+  $('guide').textContent='Navigate';
 }
 function withinProtection(x,z){
   return field.stops.some(({radius,object:[a,b]})=>radius&&Math.hypot(x-a,z-b)<radius+.34);
@@ -148,13 +235,35 @@ function updatePlayer(dt){
   let x=Number(down('right'))-Number(down('left'));
   let y=Number(down('forward'))-Number(down('back'));
   const isMars=field.kind==='mars';
-  const active=Math.hypot(x,y)>0, pace=isMars?7.7:6.7;
+  const manual=Math.hypot(x,y)>0||turn!==0;
+  if(manual&&autoNavigate){
+    autoNavigate=false;
+    $('guide').textContent='Navigate';
+  }
+  if(autoNavigate){
+    const destination=(stop.via||[])[routeStep]||stop.point;
+    const dx=destination[0]-player.x,dz=destination[1]-player.z;
+    if(Math.hypot(dx,dz)<2){
+      autoNavigate=false;
+      $('guide').textContent='Navigate';
+    }else{
+      const target=Math.atan2(-dx,-dz);
+      const rotation=Math.atan2(Math.sin(target-player.yaw),Math.cos(target-player.yaw));
+      player.yaw+=rotation*Math.min(1,dt*6);
+      y=Math.abs(rotation)<.5 ? 1 : 0;
+    }
+  }
+  const active=Math.hypot(x,y)>0, pace=isMars?6.7:4.9;
   if(active){
     const length=Math.hypot(x,y);x/=length;y/=length;
     const dx=x*Math.cos(player.yaw)-y*Math.sin(player.yaw);
     const dz=-x*Math.sin(player.yaw)-y*Math.cos(player.yaw);
     const nx=clamp(player.x+dx*dt*pace,-30,30), nz=clamp(player.z+dz*dt*pace,-68,22);
-    if(withinProtection(nx,nz))warning=.85;
+    if(withinProtection(nx,nz)){
+      autoNavigate=false;
+      $('guide').textContent='Navigate';
+      warning=.85;
+    }
     else{player.x=nx;player.z=nz;}
     const angle=Math.atan2(-dx,-dz);
     player.facing+=Math.atan2(Math.sin(angle-player.facing),Math.cos(angle-player.facing))*Math.min(dt*10,1);
@@ -170,7 +279,7 @@ function updatePlayer(dt){
   }
   const wasNear=near;near=routeStep===via.length&&range<2.45;
   if(near!==wasNear)$('interact').hidden=!near;
-  const hint=warning>0?'Protected ground. Follow the cyan beacons.':near?'Waypoint reached':'';
+  const hint=warning>0?'Protected ground. Follow the route markers.':near?'Waypoint reached':'';
   if($('hint').textContent!==hint)$('hint').textContent=hint;
   drawPlayerCamera(isMars,dt);
   placeMarker(point,range);
@@ -210,26 +319,44 @@ function placeMarker([x,z],range){
     $('heading-arrow').style.transform='translateX(-50%) rotate('+direction+'rad)';
   }
 }
-function interact(){
-  if(mode!=='field'||paused||!near)return;
-  held.clear();touches.clear();
-  const stop=field.stops[index];
-  showSequence([clip('inspect',stop.id,stop.label.toUpperCase())],()=>{
-    field.models[index]?.userData.signal && (field.models[index].userData.signal.material=cyan);
-    index++;
-    if(index===field.stops.length){
-      if(field.kind==='moon')showSequence(callClips,()=>enterField('mars'));
-      else showSequence(returnClips,finish);
-    }else{
-      changeMode('field');objective();canvas.focus({preventScroll:true});
-    }
-  });
-}
-function finish(){
-  changeMode('end');$('feed').textContent='MISSION COMPLETE · EARTH';
-  $('again').focus({preventScroll:true});
+const moonArchive = ['surveyors','rover','reflectors'];
+const marsArchive = ['sojourner','spirit','viking1','viking2','phoenix','insight','ingenuity'];
+const deepArchive = ['dawn','near','pioneer10','pioneer11','kepler'];
+
+function startReturn(){
+  saveCheckpoint('return');
+  showArchive(deepArchive,()=>showSequence(returnClips,startInterview,'return-film'));
 }
 
+function interact(){
+  if(mode!=='field'||!escapeStage()||!near)return;
+  held.clear();touches.clear();
+  const stop=field.stops[index];
+  if(recordById[stop.id]) visited.add(stop.id);
+  showSequence(recordShots[stop.id],()=>{
+    if(++index < field.stops.length){
+      saveCheckpoint(field.kind,index);
+      changeMode('field');
+      objective();
+      canvas.focus({preventScroll:true});
+      return;
+    }
+    if(field.kind==='moon'){
+      showArchive(moonArchive,()=>showSequence(callClips,()=>enterField('mars'),'transfer-film'));
+    }else{
+      showArchive(marsArchive,startReturn);
+    }
+  },'record-'+stop.id);
+}
+
+function finish(){
+  talk('');
+  clearCheckpoint();
+  changeMode('end');
+  $('feed').textContent='EARTH · 2045 · INTERVIEW COMPLETE';
+  $('scoreline').textContent=scoreCount+' / '+questions.length+' correct on the first answer';
+  $('again').focus({preventScroll:true});
+}
 
 let surveyorEcho, ascentEcho, seismogram;
 function lunarLanding(t){
@@ -288,20 +415,6 @@ function playInspection(t){
     }
     points.needsUpdate=true;center.y+=.45;
   }
-  if(stop.id.endsWith('Relay')){
-    model.rotation.y=Math.PI*.85-mix(.9,0,smooth(t));
-    const signal=model.userData.signal;
-    signal.material=t>.7?cyan:amber;
-    signal.scale.setScalar(1+Math.max(0,t-.68)*.6*Math.sin(clock*11));
-    if(isMars){
-      actor.position.set(mix(player.x,x-1.8,smooth(t)),ground,mix(player.z,z+2,smooth(t)));
-      actor.userData.arm.rotation.x=-.45*Math.sin(t*Math.PI);
-      actor.userData.head.rotation.y=-.16+Math.sin(t*7)*.3;
-    }else{
-      actor.position.set(mix(player.x,x-1,smooth(t)),ground,mix(player.z,z+1.25,smooth(t)));
-      actor.userData.walk(clock,t<.5?.45:0);
-    }
-  }
   const distance=stop.id==='ridge'?13:stop.id==='opportunity'?7.8:stop.id==='surveyor'?7.6:5.6;
   const a=mix(.76,.08,t);
   look(camera,center,V(x+Math.sin(a)*distance,ground+2.5+(stop.id==='ridge'?2.8:0),z+Math.cos(a)*distance),45);
@@ -309,9 +422,9 @@ function playInspection(t){
 }
 function callShot(shot,t){
   const link=shot==='cameraLink';
-  const isEcho=shot==='callEcho'||link;
+  const isEcho=shot==='callEdith'||link;
   const world=zone(isEcho?'mars':'moon'),{actor,kind,scene}=world;
-  const x=isEcho?-1.5:6.6,z=isEcho?4:-53.5,y=heightAt(x,z,kind);
+  const x=isEcho?-1.5:-7,z=isEcho?4:-38,y=heightAt(x,z,kind);
   actor.visible=true;actor.position.set(x,y,z);
   actor.rotation.y=Math.PI-.3;
   if(isEcho)actor.userData.head.rotation.y=.2*Math.sin(t*7);
@@ -327,12 +440,12 @@ function callShot(shot,t){
 function drawShot(shot,t){
   if(shot==='landing')return lunarLanding(t);
   if(shot==='inspect')return playInspection(t);
-  if(['callAria','callEcho','callBack','cameraLink'].includes(shot))return callShot(shot,t);
+  if(['callYuva','callEdith','cameraLink'].includes(shot))return callShot(shot,t);
   if(shot==='reunion')return arrivalShot(arrival??=arrivalWorld(),camera,t,clock);
   return spaceShot(orbit,camera,shot,t);
 }
 function draw(dt){
-  if(filmPlaying)return;
+  if(!renderer||filmPlaying||!interviewVideo.hidden||!$('plate').hidden)return;
   let scene;
   if(mode==='field'){
     if(surveyorEcho)surveyorEcho.visible=false;
@@ -343,11 +456,14 @@ function draw(dt){
       field.landing.position.y=heightAt(5,14,'moon');
       burn(field.landing,0,false);
     }
-    if(!paused)updatePlayer(dt);
+    field.actor.visible=true;
+    if(escapeStage())updatePlayer(dt);
     scene=field.scene;
   }else if(mode==='movie'&&sequence){
     const shot=sequence[shotIndex];
-    scene=drawShot(shot.shot,clamp(shotTime/shot.duration,0,1));
+    scene=directedShot(shot,clamp(shotTime/shot.duration,0,1),clock);
+  }else if(mode==='quiz'){
+    scene=interviewShot(.85,reduce?0:clock);
   }else if(mode==='end'){
     scene=arrivalShot(arrival??=arrivalWorld(),camera,1,clock);
   }else{
@@ -359,27 +475,31 @@ function frame(now){
   const elapsed=(now-previous)/1000;
   const dt=Math.min(elapsed,.05);
   previous=now;
-  if(!paused){
+  if(escapeStage()){
     clock+=dt;
     if(mode==='movie')updateSequence(elapsed);
-    if(mode==='field'&&activeVoice&&voice.ended)caption('');
+    if((mode==='field'||mode==='quiz')&&activeVoice){
+      if(voice.ended)caption('');
+      else updateCaption(voice.currentTime);
+    }
   }
   draw(paused?0:dt);
   requestAnimationFrame(frame);
 }
 function togglePause(){
-  if(!started||mode==='end')return;
+  if(!started||mode==='end'||$('archive').open)return;
   paused=!paused;
   held.clear();touches.clear();
   $('paused').hidden=!paused;
   if(paused){
     resumeFocus=document.activeElement;
-    voice.pause();score.pause();film.pause();$('resume').focus();
+    voice.pause();score.pause();film.pause();interviewVideo.pause();$('resume').focus();
   }else{
-    if(filmPlaying)film.play().catch(()=>{});
+    if(filmPlaying)film.play().catch(recoverFilm);
     else{
       score.play().catch(()=>{});
       if(activeVoice&&!voice.ended)voice.play().catch(()=>{});
+      if(!interviewVideo.hidden)interviewVideo.play().catch(()=>{});
     }
     (resumeFocus||canvas).focus({preventScroll:true});
   }
@@ -388,33 +508,62 @@ const controls={
   KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',
   KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',KeyQ:'turnLeft',KeyE:'turnRight'
 };
-function start(){
-  if(!renderer)return;
+function start(resume=false){
   started=true;paused=false;
+  if(!renderer){offerLowGraphics(resume);return;}
   score.play().catch(()=>{});
+  if(resume && checkpoint){
+    visited=new Set(checkpoint.visited);
+    if(checkpoint.chapter==='return'){startReturn();return;}
+    if(checkpoint.chapter==='interview'){startInterview();return;}
+    enterField(checkpoint.chapter,checkpoint.index);
+    return;
+  }
+  visited=new Set();
+  clearCheckpoint();
   showIntro();
 }
 function reset(){
-  started=false;sequence=null;talk('');score.pause();lunar=martian=arrival=undefined;
-  surveyorEcho=ascentEcho=seismogram=undefined;
-  changeMode('menu');$('feed').textContent='AURORA MISSION FILM';$('start').focus();
+  started=false;sequence=null;talk('');score.pause();
+  changeMode('menu');
+  displayPlate('cover.webp',true);
+  $('feed').textContent='';
+  $('start').focus();
 }
+function offerLowGraphics(resume) {
+  if(resume&&checkpoint?.chapter==='interview'){startInterview();return;}
+  if(resume&&checkpoint?.chapter==='return'){startReturn();return;}
+  saveCheckpoint('moon');
+  showSequence(introClips,()=>showArchive(records.map(record=>record.id),()=>{
+    showSequence(returnClips,startInterview,'return-film');
+  }),'opening-film');
+}
+
 canvas.tabIndex=0;
-$('start').addEventListener('click',start);
+$('start').addEventListener('click',()=>start());
+$('continue').addEventListener('click',()=>start(true));
+$('guide').addEventListener('click',()=>{
+  autoNavigate=!autoNavigate;
+  $('guide').textContent=autoNavigate?'Stop navigation':'Navigate';
+  canvas.focus({preventScroll:true});
+});
 $('again').addEventListener('click',reset);
 $('skip').addEventListener('click',nextSequence);
+$('retry-film').addEventListener('click',()=>showSequence(sequence,sequenceNext,failedMedia));
 $('resume').addEventListener('click',togglePause);
 $('pause').addEventListener('click',togglePause);
 $('interact').addEventListener('click',interact);
 $('audio').addEventListener('click',()=>{muted=!muted;setAudio();});
 $('captions').addEventListener('click',()=>{
-  captions=!captions;$('captions').setAttribute('aria-pressed',String(captions));caption(activeVoice);
+  captions=!captions;
+  $('captions').setAttribute('aria-pressed',String(captions));
+  $('subtitles').hidden=!captions||visibleCue<0;
 });
 addEventListener('keydown',event=>{
-  if(event.code==='Escape'&&started&&!event.repeat){
+  if(event.code==='Escape'&&started&&!event.repeat&&!$('archive').open){
     event.preventDefault();togglePause();return;
   }
-  if(mode!=='field'||paused)return;
+  if(mode!=='field'||!escapeStage())return;
   if(controls[event.code]){event.preventDefault();held.add(controls[event.code]);}
   if(event.code==='KeyF'&&!event.repeat){event.preventDefault();interact();}
 });
@@ -422,7 +571,7 @@ addEventListener('keyup',event=>{if(controls[event.code])held.delete(controls[ev
 addEventListener('blur',()=>{held.clear();touches.clear();});
 for(const control of document.querySelectorAll('[data-move]')){
   control.addEventListener('pointerdown',event=>{
-    if(mode!=='field'||paused)return;
+    if(mode!=='field'||!escapeStage())return;
     event.preventDefault();control.setPointerCapture(event.pointerId);
     touches.set(event.pointerId,control.dataset.move);
   });
@@ -431,31 +580,41 @@ for(const control of document.querySelectorAll('[data-move]')){
   }
 }
 canvas.addEventListener('pointerdown',event=>{
-  if(mode!=='field'||paused)return;
+  if(mode!=='field'||!escapeStage())return;
   canvas.setPointerCapture(event.pointerId);dragging=event.clientX;
 });
 canvas.addEventListener('pointermove',event=>{
   if(dragging===null||mode!=='field'||paused)return;
+  autoNavigate=false;
+  $('guide').textContent='Navigate';
   player.yaw+=(dragging-event.clientX)*.0065;
   dragging=event.clientX;
 });
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{dragging=null;});
 addEventListener('resize',resize);
-film.src=openingPath;
-film.addEventListener('loadeddata',()=>{if(!renderer)$('watch').hidden=false;});
-$('watch').addEventListener('click',()=>{
-  $('unsupported').hidden=true;film.hidden=false;film.controls=true;film.play().catch(()=>{});
-});
-if(initRenderer()){
-  if(capture){
-    window.renderOpening=(second)=>{
-      clock=second;
-      let t=second, i=0;
-      while(i<introClips.length-1&&t>=introClips[i].duration)t-=introClips[i++].duration;
-      const c=introClips[i];
-      renderer.render(drawShot(c.shot,clamp(t/c.duration,0,1)),camera);
-    };
-    window.openingClips=introClips;
-  }else requestAnimationFrame(frame);
+const canRender = initRenderer();
+if(capture && canRender){
+  window.filmPlan={'opening-film':introClips,'transfer-film':callClips,'return-film':returnClips};
+  for(const [id,shots] of Object.entries(recordShots))window.filmPlan['record-'+id]=shots;
+  window.readyToRender=async name=>{
+    for(const shot of window.filmPlan[name])directedShot(shot,.05,0);
+    if(astronautAsset)await astronautAsset;
+    if(roverAsset)await roverAsset;
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  };
+  window.renderScene=(name,second)=>{
+    clock=second;
+    const clips=window.filmPlan[name];
+    let t=second,i=0;
+    while(i<clips.length-1&&t>=clips[i].duration)t-=clips[i++].duration;
+    const shot=clips[i];
+    const world=directedShot(shot,clamp(t/shot.duration,0,1),second);
+    renderer.render(world,camera);
+    return canvas.toDataURL('image/jpeg',.89).split(',')[1];
+  };
+}else{
+  reset();
+  $('continue').hidden=!checkpoint;
+  requestAnimationFrame(frame);
 }
-
+bindPanels();

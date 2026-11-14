@@ -1,27 +1,38 @@
 'use strict';
-// Scene dialogue. Audio files use the same keys.
-const lines = {
-  signal: ['CONTROL', 'Wayfarer, we lost two heritage relays. One on the Moon. One on Mars. Both packets are carrying names from the old missions.'],
-  launch: ['ARIA', 'Copy, Control. I will take the lunar site. Echo, take the Mars stack. We will compare notes when you get there.'],
-  split: ['ECHO-7', 'Separation confirmed. Your trip takes days. Mine takes months. I will keep a light on for you.'],
-  landing: ['CONTROL', 'Aria, you are clear to land. Follow the route beacons and stay outside the marked heritage zones.'],
-  moonStart: ['ARIA', 'Boots down. I see the first beacon. Let’s find out what these machines can tell us.'],
-  surveyor: ['ARIA', 'Surveyor Three. Its scoop tested how the lunar soil behaved. Watch the lander settle. Two bounces, then it was still.'],
-  apollo: ['ARIA', 'The top stage carried the crew back to orbit. This lower stage stayed behind. It cannot be the source of our signal.'],
-  alsep: ['ARIA', 'The seismic experiment measured vibrations in the ground. That waveform is an archived measurement. It is not a live heartbeat.'],
-  moonRelay: ['ARIA', 'Modern receiver in sight. Clearing the dust. Aligning the lens. Now to correct the archive so it stops assigning old names to new signals.'],
-  callAria: ['ARIA', 'Echo, the Moon relay is back. Its catalog confused old equipment with a live sender. Are you seeing the same thing?'],
-  callEcho: ['ECHO-7', 'Delayed reply received. Same pattern here. I have a safe route around Opportunity. I am sending you my camera and drive controls.'],
-  callBack: ['ARIA', 'I see your camera. I will drive from your point of view. Keep me outside the rover’s protected zone.'],
-  marsStart: ['ECHO-7', 'Camera linked. Follow the first beacon along the ridge. I will keep us on safe terrain.'],
-  ridge: ['ECHO-7', 'The ridge gives us a clear view across the valley. Dust is filling the direct approach. I have marked a route around it.'],
-  opportunity: ['ECHO-7', 'There is Opportunity. Its instruments found evidence that water once shaped rocks here. Its discoveries stayed with us after its last signal.'],
-  marsRelay: ['ECHO-7', 'At the modern relay. Deploying the optical marker. Correcting the sender label. Both relays now agree. Mission complete.'],
-  depart: ['ARIA', 'Both sites are clear, and our records are on their way home. Echo, what do you think about on a long trip back?'],
-  voyager: ['ECHO-7', 'The Voyagers. Two probes left Earth in nineteen seventy seven. Voyager One visited Jupiter and Saturn. Voyager Two continued to Uranus and Neptune.'],
-  record: ['ECHO-7', 'Each carries a Golden Record with greetings, sounds, music and pictures from Earth. It was a way to tell someone, somewhere, that we were here.'],
-  stars: ['ECHO-7', 'Both crossed into interstellar space. They kept going outward. We get to do something the Voyagers were never built to do.'],
-  earth: ['ARIA', 'Come home. Welcome back, Echo.'],
-  reunion: ['ECHO-7', 'Welcome back, Aria. The old missions are safe in the archive. Our story can go beside theirs.']
-};
 
+const lines = {
+  signal: ['MISSION CONTROL', 'Earth, 2042. Two silences in the NASA archive tell very different stories. Surveyor Three went quiet as lunar night began. Decades later, the last image from Opportunity broke up in a dust storm. Your mission is to find both sites and follow the evidence.'],
+  trainingMoon: ['YUVA', 'I am training on the Apollo Twelve orbital photograph. The lander, the footprints and the experiments each give me a landmark. On the Moon, I will follow the protected route to Surveyor Crater.'],
+  trainingMars: ['E.D.I.T.H.', 'I am tracing Opportunity’s last route. During the storm, the camera could barely see the Sun. I will use the ridge above Perseverance Valley to reach a safe viewing point.'],
+  launch: ['MISSION CONTROL', 'Launch is clear. One rocket, two spacecraft. Yuva, you are headed for the Moon. Edith, after separation, you are headed for Mars.'],
+  split: ['E.D.I.T.H.', 'Both spacecraft are clear. Yuva, you land in days. My descent comes months later. I will send you the archive from the transit leg.'],
+  landing: ['YUVA', 'Lunar descent complete. I have the orbital map on my display. Surveyor Crater is our first stop.'],
+  moonStart: ['E.D.I.T.H.', 'Yuva, follow your navigation marker. Check the distance and stay outside the heritage perimeter. I will bring up each mission as you approach.'],
+  surveyor: ['E.D.I.T.H.', 'Surveyor Three bounced twice before it settled. Its scoop tested the soil and helped show that a crewed lander could stand here. NASA shut it down for lunar night on May fourth, nineteen sixty-seven. Apollo Twelve later brought parts back to Earth.'],
+  apollo: ['E.D.I.T.H.', 'That is Intrepid. Its upper stage carried the crew back to lunar orbit. The lower stage remained here, with the footprints you can see on the orbital image.'],
+  alsep: ['E.D.I.T.H.', 'The Apollo Twelve seismometer recorded vibrations in the Moon. The powered stations shut down in nineteen seventy-seven. The archived measurements still tell scientists about what lies below the surface.'],
+  lunarRepair: ['E.D.I.T.H.', 'Taurus Littrow, December nineteen seventy-two. A hammer tore the Apollo Seventeen rover’s fender extension off. Tape came loose on the dusty surface. The crew made a new guard from four maps, tape and clamps. It worked because they could fit and fasten it by hand.'],
+  moonReport: ['YUVA', 'Moon survey complete. Surveyor’s silence followed sunset. I am sending the site observations and the original shutdown record.'],
+  marsDescent: ['E.D.I.T.H.', 'Months later. Mars descent complete. I have received Yuva’s recorded update. I am sending my own camera and route notes back.'],
+  cameraLink: ['MISSION CONTROL', 'Mars view received. Take over the exploration controls.'],
+  marsStart: ['E.D.I.T.H.', 'Follow the marker up to the ridge. I will keep us clear of the rover and its tracks.'],
+  ridge: ['E.D.I.T.H.', 'This is Perseverance Valley, on the rim of Endeavour Crater. The route in yellow is Opportunity’s actual traverse. We will stay on our own path.'],
+  opportunity: ['E.D.I.T.H.', 'Opportunity’s instruments found evidence that water once shaped rocks on Mars. During the twenty eighteen storm, dust blocked sunlight and the solar-powered rover fell silent. Earth sent over a thousand recovery commands. Opportunity never answered.'],
+  last: ['YUVA', 'I see the last frame. Only part of it made it home. The dates and the storm tell us why the signal stopped.'],
+  spiritRepair: ['E.D.I.T.H.', 'Earlier, Spirit had a different problem. In two thousand four, its computer repeatedly reset while trying to manage flash memory. Engineers on Earth temporarily bypassed flash, cleared thousands of files and confirmed normal boot. That recovery happened during Spirit’s mission.'],
+  depart: ['MISSION CONTROL', 'Earth orbit, 2045. Yuva and Edith are together again. Their records have arrived safely. The crew is cleared for the final return to Earth.'],
+  news: ['NEWS REPORTER', 'From the archive. NASA marked a remarkable distance in the Voyager story. In November twenty twenty-six, Voyager One was projected to reach one light-day from Earth. That is roughly twenty-six billion kilometers.'],
+  imagine: ['YUVA', 'A radio signal would take a whole day to travel that far. I keep picturing the two probes out there, each on its own path, each carrying a little piece of home.'],
+  record: ['E.D.I.T.H.', 'Each Golden Record carries sounds, music, greetings and images from Earth. It was made to tell a future listener something about the people who sent it.'],
+  earth: ['YUVA', 'There’s Earth. It feels different when you have spent so long looking back at it.'],
+  reunion: ['NEWS REPORTER', 'Welcome home, Yuva. Before we close the mission, let’s see what the evidence tells us.'],
+  q0: ['NEWS REPORTER', 'What was happening when Surveyor Three was shut down?'],
+  q1: ['NEWS REPORTER', 'What did the Apollo Seventeen crew attach over the wheel?'],
+  q2: ['NEWS REPORTER', 'What reduced Opportunity’s solar power in twenty eighteen?'],
+  q3: ['NEWS REPORTER', 'What helped Spirit recover in two thousand four?'],
+  q4: ['NEWS REPORTER', 'Which spacecraft landed on the asteroid Eros?'],
+  q5: ['NEWS REPORTER', 'What does one light-day away mean for a radio signal?']
+};
+questions.forEach((question,index)=>{
+  lines['answer'+index]=['YUVA',question.answer];
+});

@@ -1,62 +1,151 @@
-const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+const {chromium}=require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const {spawn}=require('node:child_process');
 const {once}=require('node:events');
 const {renameSync,statSync}=require('node:fs');
-const {resolve}=require('node:path');
-const {pathToFileURL}=require('node:url');
+const {join}=require('node:path');
 
-async function render(){
-  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,
-    args:['--enable-unsafe-swiftshader']});
-  let encoder;
-  try{
-    const page=await browser.newPage({viewport:{width:960,height:540},deviceScaleFactor:1});
-    page.on('pageerror',console.error);
-    await page.goto(pathToFileURL(resolve('index.html')).href+'?render');
-    await page.waitForFunction(()=>typeof window.renderOpening==='function');
-    const clips=await page.evaluate(()=>openingClips);
-    const fps=24, length=clips.reduce((sum,c)=>sum+c.duration,0);
-    const args=['-y','-hide_banner','-loglevel','warning','-f','image2pipe','-framerate',String(fps),'-vcodec','mjpeg','-i','pipe:0',
-      '-stream_loop','-1','-i','cinematic/assets/score.wav'];
-    let offset=0;
-    const filters=['[1:a]volume=0.23[score]'];
-    for(const [i,clip] of clips.entries()){
-      args.push('-i','cinematic/assets/'+clip.voice+'.wav');
-      filters.push('['+(i+2)+':a]adelay='+Math.round(offset*1000)+':all=1[v'+i+']');
-      offset+=clip.duration;
+const assets='cinematic/assets/';
+const target=assets+'final/';
+const base=process.env.ECHOES_URL || 'http://127.0.0.1:8766/';
+const assembleOnly=process.argv.includes('--assemble');
+const requested=process.argv.slice(2).filter(argument=>argument!=='--assemble');
+const archive=process.env.ECHOES_ARCHIVE_MEDIA;
+const rate=24;
+const ffmpeg=process.env.FFMPEG_PATH || 'ffmpeg';
+
+const excerpts={
+  'opening-film':[
+    ['flightArchive',0,5.5,'echoes-artemis2.mp4',15,'crop=1728:972:96:0,'],
+    ['signal',0,10.75,'echoes-cockpit.mp4',1,'hflip,eq=saturation=.65,'],
+    ['launch',0,4.75,'echoes-helmet.mp4',12,'hflip,eq=saturation=.65,']
+  ],
+  'transfer-film':[['moonReport',0,6.4,'echoes-helmet.mp4',4,'hflip,eq=saturation=.62,']],
+  'record-apollo':[['apollo',0,9.65,'echoes-apollo12.m4v',0]],
+  'record-alsep':[['lunarRepair',0,6,'echoes-apollo17.webm',4]],
+  'return-film':[
+    ['news',7,15.8,'echoes-cockpit.mp4',8.7,'hflip,eq=saturation=.65,'],
+    ['imagine',0,5.65,'echoes-voyager-2.mp4',5],
+    ['imagine',5.65,11.318,'echoes-voyager-5.mp4',7],
+    ['record',0,9.8,'echoes-voyager-3.mp4',0],
+    ['reunion',2,7.5,'echoes-cockpit.mp4',0,'hflip,eq=saturation=.6,']
+  ]
+};
+
+function cueTime(clips,cue) {
+  const index=clips.findIndex(clip=>(clip.id||clip.voice)===cue);
+  if(index<0)throw Error('Unknown edit cue: '+cue);
+  return clips.slice(0,index).reduce((sum,clip)=>sum+clip.duration,0);
+}
+
+async function transcode(args) {
+  const child=spawn(ffmpeg,['-y','-hide_banner','-loglevel','error',...args],{stdio:'inherit',windowsHide:true});
+  const [code]=await once(child,'close');
+  if(code!==0)throw Error('FFmpeg exited with status '+code);
+}
+
+async function assemble(name,clips) {
+  const source=target+name+'.mp4';
+  const archiveClips=excerpts[name];
+  if(archive&&archiveClips){
+    const input=['-i',source], filters=[], segments=[];
+    let frame=0, archiveInput=0;
+    function segment(input,start,end,preprocess='') {
+      const label='segment'+segments.length;
+      filters.push('['+input+':v]'+preprocess+'fps='+rate+',scale=960:540,setsar=1,format=yuv420p,trim=start_frame='+start+
+        (end===undefined?'':':end_frame='+end)+',setpts=PTS-STARTPTS['+label+']');
+      segments.push('['+label+']');
     }
-    filters.push('[score]'+clips.map((_,i)=>'[v'+i+']').join('')+'amix=inputs='+(clips.length+1)+':normalize=0,alimiter=limit=.94[a]');
-    const output='cinematic/assets/opening.partial.webm';
-    encoder=spawn(process.env.FFMPEG_PATH||'ffmpeg',[...args,'-filter_complex',filters.join(';'),
-      '-map','0:v','-map','[a]','-t',String(length),'-c:v','libvpx','-pix_fmt','yuv420p',
-      '-deadline','good','-cpu-used','6','-b:v','2200k','-threads','4',
-      '-c:a','libopus','-b:a','112k',output],{stdio:['pipe','inherit','inherit'],windowsHide:true});
-    const completion=once(encoder,'close');
-    void completion.catch(()=>{});
-    encoder.stdin.on('error',e=>console.error('Encoder input:',e.message));
-    const count=Math.ceil(length*fps);
-    for(let start=0;start<count;start+=8){
-      const frames=await page.evaluate(({start,end,fps})=>{
-        const frames=[];
-        for(let n=start;n<end;n++){
-          renderOpening(n/fps);
-          frames.push(document.getElementById('world').toDataURL('image/jpeg',.9).split(',')[1]);
-        }
-        return frames;
-      },{start,end:Math.min(count,start+8),fps});
-      for(const frame of frames){
-        if(!encoder.stdin.write(Buffer.from(frame,'base64')))await once(encoder.stdin,'drain');
-      }
-      if(start%(fps*6)===0)console.log('Rendered '+(start/fps).toFixed(0)+' / '+length.toFixed(0)+' seconds');
+    for(const [cue,start,end,filename,sourceStart,preprocess] of archiveClips){
+      const cut=cueTime(clips,cue);
+      const startFrame=Math.round((cut+start)*rate);
+      const endFrame=Math.round((cut+end)*rate);
+      if(frame<startFrame)segment(0,frame,startFrame);
+      input.push('-ss',String(sourceStart),'-i',join(archive,filename));
+      segment(++archiveInput,0,endFrame-startFrame,preprocess);
+      frame=endFrame;
     }
-    encoder.stdin.end();
-    const [status]=await completion;
-    if(status!==0||statSync(output).size<100000)throw Error('Opening video encoding failed');
-    renameSync(output,'cinematic/assets/opening.webm');
-    console.log('Saved opening.webm with '+count+' rendered frames and mixed dialogue.');
-  }finally{
-    if(encoder&&encoder.exitCode===null)encoder.kill();
-    await browser.close();
+    segment(0,frame);
+    filters.push(segments.join('')+'concat=n='+segments.length+':v=1:a=0[video]');
+    const temporary=target+name+'.partial.mp4';
+    await transcode([...input,'-filter_complex',filters.join(';'),'-map','[video]','-map','0:a','-c:a','copy',
+      '-c:v','libx264','-preset','veryfast','-crf','21','-movflags','+faststart',temporary]);
+    renameSync(temporary,source);
+    console.log(name+' · archival motion added');
+  }
+  if(name==='return-film'){
+    await transcode(['-ss',String(cueTime(clips,'reunion')+2.2),'-i',source,
+      '-vf','trim=duration=3,split[f][r];[f]setpts=PTS-STARTPTS[a];[r]reverse,setpts=PTS-STARTPTS[b];[a][b]concat=n=2:v=1:a=0',
+      '-an','-c:v','libx264','-preset','veryfast','-crf','23','-movflags','+faststart',target+'interview-loop.mp4']);
   }
 }
-render().catch(e=>{console.error(e);process.exitCode=1;});
+
+async function encode(page,name,clips) {
+  await page.evaluate(name=>readyToRender(name),name);
+  await page.waitForLoadState('networkidle');
+  const length=clips.reduce((sum,clip)=>sum+clip.duration,0);
+  const args=['-y','-hide_banner','-loglevel','error','-f','image2pipe','-framerate',String(rate),'-vcodec','mjpeg','-i','pipe:0',
+    '-stream_loop','-1','-i',assets+'score.wav'];
+  const filters=['[1:a]volume=0.16[score]'];
+  const audioInputs=['[score]'];
+  let offset=0;
+  for(const clip of clips) {
+    if(clip.voice){
+      args.push('-i',assets+clip.voice+'.wav');
+      const label='v'+audioInputs.length;
+      filters.push('['+(audioInputs.length+1)+':a]adelay='+Math.round(offset*1000)+':all=1['+label+']');
+      audioInputs.push('['+label+']');
+    }
+    offset+=clip.duration;
+  }
+  filters.push(audioInputs.join('')+'amix=inputs='+audioInputs.length+':normalize=0,alimiter=limit=.9[a]');
+  const temporary=target+name+'.partial.mp4';
+  const encoder=spawn(ffmpeg,[...args,'-filter_complex',filters.join(';'),
+    '-map','0:v','-map','[a]','-t',String(length),'-c:v','libx264','-pix_fmt','yuv420p',
+    '-preset','veryfast','-crf','22','-threads','4','-c:a','aac','-b:a','112k','-movflags','+faststart',temporary],
+    {stdio:['pipe','inherit','inherit'],windowsHide:true});
+  const completion=once(encoder,'close');
+  completion.catch(()=>{});
+  const failed=new Promise((_,reject)=>{
+    encoder.on('error',reject);
+    encoder.stdin.on('error',reject);
+  });
+  failed.catch(()=>{});
+  const count=Math.ceil(length*rate);
+  try {
+    for(let start=0;start<count;start+=8){
+      const frames=await page.evaluate(({name,start,end,rate})=>{
+        const frames=[];
+        for(let frame=start;frame<end;frame++)frames.push(renderScene(name,frame/rate));
+        return frames;
+      },{name,start,end:Math.min(start+8,count),rate});
+      for(const frame of frames){
+        if(!encoder.stdin.write(Buffer.from(frame,'base64')))await Promise.race([once(encoder.stdin,'drain'),failed]);
+      }
+    }
+    encoder.stdin.end();
+    const [result]=await completion;
+    if(result!==0||statSync(temporary).size<50000)throw Error('Film encoding failed: '+name);
+    renameSync(temporary,target+name+'.mp4');
+    console.log(name+' · '+length.toFixed(1)+' s · '+count+' rendered frames');
+  } finally {
+    if(encoder.exitCode===null)encoder.kill();
+  }
+}
+
+(async()=>{
+  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH,
+    args:['--enable-unsafe-swiftshader']});
+  try{
+    const page=await browser.newPage({viewport:{width:960,height:540},deviceScaleFactor:1});
+    page.on('pageerror',e=>console.error(e.message));
+    await page.goto(base+'?render');
+    await page.waitForFunction(()=>typeof window.renderScene==='function');
+    const plan=await page.evaluate(()=>window.filmPlan);
+    const names=requested.length?requested:Object.keys(plan);
+    for(const name of names) {
+      if(!plan[name])throw Error('Unknown sequence: '+name);
+      if(!assembleOnly)await encode(page,name,plan[name]);
+      await assemble(name,plan[name]);
+    }
+  }finally{await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

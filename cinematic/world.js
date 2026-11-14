@@ -8,6 +8,9 @@ function canvasTexture(width,height,paint){
   return texture;
 }
 const textures={};
+const satelliteEarth=new T.TextureLoader().load('cinematic/assets/final/blue-marble.jpg');
+satelliteEarth.colorSpace=T.SRGBColorSpace;
+satelliteEarth.anisotropy=4;
 function globeTexture(kind){
   if(textures[kind])return textures[kind];
   const palette={moon:['#90979a','#565b61','#d9d2ba'],mars:['#a65330','#56312c','#dc9164'],jupiter:['#c69a7e','#9a6658','#edd4b0'],saturn:['#d4b486','#957862','#f9dcaa'],uranus:['#8fc3c4','#7aabbc','#b0d6d4'],neptune:['#5276be','#354b9a','#80aff2']};
@@ -54,7 +57,7 @@ function globeTexture(kind){
 }
 function planet(p,kind,r,x,y,z,atmosphere=false){
   const g=group(p,x,y,z);
-  const globe=ball(g,r,new T.MeshStandardMaterial({map:globeTexture(kind),roughness:.95}));
+  const globe=ball(g,r,new T.MeshStandardMaterial({map:kind==='earth'?satelliteEarth:globeTexture(kind),roughness:.95}));
   globe.rotation.y=-1;
   if(atmosphere){
     mesh(g,new T.SphereGeometry(r*1.038,48,36),new T.ShaderMaterial({
@@ -100,13 +103,12 @@ function lighting(scene,hemi=0xa6bce7,ground=0x6a543d,sun=0xffe8c3,power=2.55,sh
 const moonStops=[
   {id:'surveyor',label:'Surveyor 3',point:[-10,-8],object:[-14,-14],radius:3.4},
   {id:'apollo',label:'Apollo 12',point:[6,-23],object:[9,-29],radius:4},
-  {id:'alsep',label:'Seismic station',point:[-7,-38],object:[-11,-43],radius:3.4},
-  {id:'moonRelay',label:'Modern receiver',point:[8,-54],object:[10,-57],radius:0}
+  {id:'alsep',label:'Apollo 12 ALSEP',point:[-7,-38],object:[-11,-43],radius:3.4}
 ];
 const marsStops=[
-  {id:'ridge',label:'Ridge lookout',point:[-10,-9],object:[-13,-16],radius:0},
+  {id:'ridge',label:'Perseverance Valley overlook',point:[-10,-9],object:[-13,-16],radius:0},
   {id:'opportunity',label:'Opportunity',point:[-9,-33],object:[-2,-37],radius:5},
-  {id:'marsRelay',label:'Modern marker',point:[10,-53],via:[[-9,-46],[2,-51]],object:[11,-57],radius:0}
+  {id:'last',label:'Last signal overlook',point:[-9,-45],object:[-2,-37],radius:0}
 ];
 function heightAt(x,z,kind){
   const isMars=kind==='mars';
@@ -127,23 +129,32 @@ function terrain(scene,kind){
   for(let i=0;i<position.count;i++){
     const x=position.getX(i),z=position.getZ(i),y=heightAt(x,z,kind);
     position.setY(i,y);
-    color.set(mars?0x9a5035:0x64676e).multiplyScalar(.77+rnd()*.34+.06*Math.sin(x*.53+z*.29));
+    color.set(mars?0xd78c61:0xb1b3b8).multiplyScalar(.82+rnd()*.24+.06*Math.sin(x*.53+z*.29));
     colors.push(color.r,color.g,color.b);
   }
   geometry.computeVertexNormals();
   geometry.setAttribute('color',new T.Float32BufferAttribute(colors,3));
-  const grit=canvasTexture(256,256,(c,w,h)=>{
-    const img=c.createImageData(w,h);
-    for(let i=0;i<img.data.length;i+=4){
-      const v=170+rnd()*79;
-      img.data[i]=img.data[i+1]=img.data[i+2]=v;img.data[i+3]=255;
-    }
-    c.putImageData(img,0,0);
-  });
-  grit.wrapS=grit.wrapT=T.RepeatWrapping;grit.repeat.set(120,120);
-  const floor=mesh(scene,geometry,new T.MeshStandardMaterial({vertexColors:true,map:grit,roughness:.99}));
+  const loader=new T.TextureLoader();
+  const grit=loader.load(finalAssets+'gravel.jpg');
+  const normal=loader.load(finalAssets+'gravel-normal.jpg');
+  grit.colorSpace=T.SRGBColorSpace;
+  for(const texture of [grit,normal]){
+    texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(47,47);
+    texture.anisotropy=4;
+  }
+  const soil=new T.MeshStandardMaterial({vertexColors:true,map:grit,normalMap:normal,normalScale:new T.Vector2(.65,.65),roughness:.99});
+  if(!mars){
+    soil.onBeforeCompile=shader=>{
+      shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',
+        `#include <map_fragment>
+        float lunarLuminance=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+        diffuseColor.rgb=vec3(lunarLuminance*1.13);`);
+    };
+  }
+  const floor=mesh(scene,geometry,soil);
   floor.castShadow=false;
-  const rockGeo=new T.IcosahedronGeometry(1,0);
+  const rockGeo=new T.IcosahedronGeometry(1,1);
+  rockGeo.computeVertexNormals();
   const stones=new T.InstancedMesh(rockGeo,mat(mars?0x794132:0x515258),490);
   const dummy=new T.Object3D();
   for(let i=0;i<490;i++){
@@ -173,8 +184,8 @@ function routeBeacon(scene,x,z,kind,large=false){
 }
 function surface(kind){
   const scene=new T.Scene(),mars=kind==='mars';
-  scene.background=new T.Color(mars?0x794733:0x070e1b);
-  scene.fog=new T.FogExp2(mars?0x94593d:0x151d2a,mars?.014:.0057);
+  scene.background=new T.Color(mars?0x9a694e:0x070e1b);
+  scene.fog=new T.FogExp2(mars?0x9a694e:0x151d2a,mars?.014:.0057);
   if(!mars)starfield(scene,34);
   lighting(scene,mars?0xffcb93:0xa4bcf0,mars?0x934834:0x686166,mars?0xffd5a7:0xfff3dc,2.2,true);
   terrain(scene,kind);
@@ -187,7 +198,8 @@ function surface(kind){
     ball(scene,3.3,new T.MeshBasicMaterial({color:0xffc890,fog:false}),-52,26,-128);
   }
   const stops=mars?marsStops:moonStops;
-  const models=mars?[null,rover(scene,false),relayModel(scene)]:[surveyorModel(scene),apolloModel(scene),alsepModel(scene),relayModel(scene)];
+  const models=mars?[null,rover(scene,false),null]:[surveyorModel(scene),apolloModel(scene),alsepModel(scene)];
+  if(mars)mountRover(models[1]);
   const beacons=[];
   let last=[0,8];
   stops.forEach((stop,i)=>{
@@ -216,6 +228,7 @@ function surface(kind){
   const landing=mars?null:ship(scene,'lander');
   if(landing)landing.position.set(5,heightAt(5,14,kind),14);
   const actor=mars?rover(scene,true):astronaut(scene);
+  if(!mars) upgradeAstronaut(actor);
   return {scene,kind,stops,models,beacons,actor,landing};
 }
 function orbitalWorld(){
@@ -226,6 +239,7 @@ function orbitalWorld(){
   const mars=planet(scene,'mars',13,17,-11,-47,true);
   const giants=['jupiter','saturn','uranus','neptune'].map((kind,i)=>planet(scene,kind,7+i,10,-1,-32));
   const rocket=ship(scene,'rocket'),one=ship(scene),two=ship(scene),probe=voyagerModel(scene);
+  const plasma=plasmaTrail(one);
   const disc=group(scene);
   tube(disc,1.57,1.57,.075,foil,0,0,0,96);
   for(let i=1;i<37;i++){
@@ -245,6 +259,6 @@ function orbitalWorld(){
   };
   skyImage.src=archivalSky;
   const objects=[earth,moon,mars,...giants,rocket,one,two,probe,disc,sky];
-  return {scene,earth,moon,mars,giants,rocket,one,two,probe,disc,sky,objects};
+  return {scene,earth,moon,mars,giants,rocket,one,two,probe,disc,sky,objects,plasma};
 }
 

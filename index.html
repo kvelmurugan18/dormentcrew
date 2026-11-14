@@ -2,47 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#060b13"><title>ECHOES — The Last Transmission</title>
-<link rel="stylesheet" href="cinematic/game.css">
+<meta name="theme-color" content="#070c10"><meta name="description" content="Follow Yuva and E.D.I.T.H. from lunar night to the last signal on Mars. An interactive film grounded in NASA mission records.">
+<title>ECHOES — The Last Transmission</title>
+<link rel="stylesheet" href="cinematic/game.css"><link rel="stylesheet" href="cinematic/final.css?v=2042">
 <script defer src="cinematic/assets/three.min.js"></script>
-<script defer src="cinematic/earth.js"></script>
-<script defer src="cinematic/sky.js"></script>
-<script defer src="cinematic/story.js"></script>
-<script defer src="cinematic/timings.js"></script>
-<script defer src="cinematic/models.js"></script>
-<script defer src="cinematic/world.js"></script>
-<script defer src="cinematic/shots.js"></script>
-<script defer src="cinematic/game.js"></script>
+<script defer src="cinematic/earth.js"></script><script defer src="cinematic/sky.js"></script>
+<script defer src="cinematic/archive-data.js?v=2042"></script><script defer src="cinematic/story.js?v=2042"></script><script defer src="cinematic/timings.js?v=2042"></script>
+<script defer src="cinematic/assets/final/model-loader.js"></script><script defer src="cinematic/actor.js?v=2042"></script><script defer src="cinematic/models.js?v=2042"></script><script defer src="cinematic/world.js?v=2042"></script><script defer src="cinematic/shots.js?v=2042"></script><script defer src="cinematic/direction.js?v=2042"></script><script defer src="cinematic/panels.js?v=2042"></script><script defer src="cinematic/game.js?v=2042"></script>
 </head>
 <body>
 <main id="screen" aria-label="ECHOES mission">
   <canvas id="world" aria-label="Animated mission view"></canvas>
-  <video id="film" playsinline preload="auto" hidden></video>
+  <video id="film" playsinline preload="none" hidden></video>
+  <video id="interview-video" playsinline muted loop preload="none" aria-hidden="true" hidden></video>
+  <div id="plate" aria-hidden="true" hidden></div>
   <div class="grade" aria-hidden="true"></div><div id="bars" class="bars" aria-hidden="true"></div>
   <div id="cut" aria-hidden="true"></div>
   <div id="visor" aria-hidden="true" hidden><span></span></div>
-  <header class="top"><span class="wordmark"><i></i> ECHOES</span><span id="feed" aria-live="polite">AURORA MISSION FILM</span><div class="tools"><button type="button" id="audio" aria-pressed="false" title="Mute or unmute">Sound on</button><button type="button" id="captions" aria-pressed="false" title="Toggle captions">CC</button><button type="button" id="pause" aria-label="Pause" title="Pause (Esc)" hidden>Ⅱ</button></div></header>
+  <header class="top">
+    <span class="wordmark"><i aria-hidden="true"></i> DORMENT CREW</span>
+    <span id="feed" aria-live="polite"></span>
+    <div class="tools"><button id="archive-open" type="button">Archive</button><button type="button" id="audio" aria-pressed="false" title="Mute or unmute">Sound on</button><button type="button" id="captions" aria-pressed="true" title="Toggle captions">CC</button><button type="button" id="pause" aria-label="Pause" title="Pause (Esc)" hidden>Ⅱ</button></div>
+  </header>
   <section id="menu" aria-labelledby="title">
-    <p class="overline">AURORA FLIGHT OPERATIONS / 01</p><h1 id="title">ECHOES</h1><p class="subtitle">The Last Transmission</p>
-    <button id="start" type="button" class="primary"><span aria-hidden="true">▶</span> Begin mission</button>
-    <span class="tag">AN INTERACTIVE SPACE FILM</span>
+    <p class="overline">MOON / MARS · 2042</p>
+    <h1 id="title">ECHOES</h1><p class="subtitle">The Last Transmission</p>
+    <p class="premise">Two worlds went silent. Follow Yuva and E.D.I.T.H. to where the signals ended.</p>
+    <button id="start" type="button" class="primary">Begin mission <span aria-hidden="true">↗</span></button>
+    <button id="continue" type="button" class="secondary" hidden>Resume mission</button>
   </section>
-  <section id="cinema" aria-label="Film controls" hidden><div id="scene-name"></div><div class="time-track"><i id="time"></i></div><button id="skip" type="button">Skip sequence <span aria-hidden="true">↗</span></button></section>
-  <a id="sky-credit" href="https://www.eso.org/public/images/eso0932a/" target="_blank" rel="noopener" hidden>Milky Way panorama · ESO/S. Brunier</a>
+  <a id="menu-sources" href="cinematic/credits.html">Sources &amp; credits</a>
+  <span id="art-credit" hidden>AI-generated visual</span>
+  <section id="cinema" aria-label="Film controls" hidden><div id="scene-name"></div><div class="time-track"><i id="time"></i></div><button id="skip" type="button">Skip scene <span aria-hidden="true">↗</span></button></section>
+  <div id="film-error" role="status" hidden><p>Video playback is unavailable.</p><button id="retry-film" type="button">Retry video</button></div>
+  <a id="sky-credit" href="https://www.eso.org/public/images/eso0932a/" target="_blank" rel="noopener" hidden>ESO/S. Brunier · Milky Way panorama</a>
+  <div id="news" hidden><span>ARCHIVE BROADCAST · NOV 2026</span><strong>Voyager 1</strong><p>One light-day from Earth</p></div>
+  <a id="scene-credit" hidden target="_blank" rel="noopener"></a>
   <section id="hud" aria-label="Field controls" hidden>
     <div id="objective"><span id="actor"></span><strong id="target"></strong><div id="steps" aria-hidden="true"></div></div>
     <div id="marker" aria-hidden="true"><i></i><span></span></div>
     <span id="heading-arrow" aria-hidden="true">▲</span><div id="reticle" aria-hidden="true"></div>
     <p id="hint" role="status"></p>
+    <button type="button" id="guide" title="Use the navigation tool">Navigate</button>
     <div id="touch"><div class="pad" aria-label="Movement controls"><button data-move="forward" type="button" aria-label="Move forward">↑</button><button data-move="left" type="button" aria-label="Move left">←</button><button data-move="back" type="button" aria-label="Move backward">↓</button><button data-move="right" type="button" aria-label="Move right">→</button></div><div class="pad turn" aria-label="Camera controls"><button data-move="turnLeft" type="button" aria-label="Turn left">↶</button><button data-move="turnRight" type="button" aria-label="Turn right">↷</button></div></div>
     <button type="button" id="interact" class="primary" hidden>Inspect</button>
     <p class="keyhelp"><kbd>W A S D</kbd> move <b>·</b> <kbd>Q / E</kbd> turn <b>·</b> <kbd>F</kbd> inspect <b>·</b> drag to look</p>
   </section>
   <div id="subtitles" aria-live="off" hidden><span id="speaker"></span><p id="speech"></p></div>
-  <section id="end" aria-labelledby="end-title" hidden><p class="overline">EARTH / RECOVERY CONFIRMED</p><h2 id="end-title">Mission complete.</h2><button class="primary" id="again" type="button">Replay mission</button><a href="cinematic/credits.html">Credits and sources</a></section>
+  <dialog id="archive" aria-labelledby="archive-title"><div class="archive-shell">
+    <div class="dialog-head"><div><p class="overline">NASA MISSION RECORDS</p><h2 id="archive-title">Equipment archive</h2></div><button id="archive-close" type="button">Close</button></div>
+    <div class="archive-grid"><nav id="archive-list" aria-label="Equipment records"></nav><article id="archive-detail" aria-live="polite"></article></div>
+    <div class="archive-actions"><span id="archive-count"></span><button class="secondary" id="archive-next" type="button">Next record →</button><button class="primary" id="archive-continue" type="button" hidden>Continue mission →</button></div>
+  </div></dialog>
+  <section id="interview" aria-labelledby="question" hidden><div class="interview-panel">
+    <span class="overline" id="quiz-progress">EARTH · 2045</span><h2 id="question" tabindex="-1"></h2>
+    <div id="answers"></div><p id="quiz-feedback" role="status"></p>
+    <button type="button" class="secondary" id="quiz-clue">Show clue</button><button type="button" id="quiz-next" class="primary" hidden>Next question →</button>
+  </div></section>
+  <section id="end" aria-labelledby="end-title" hidden><p class="overline">EARTH · 2045</p><h2 id="end-title">Transmission complete.</h2><p id="scoreline"></p><button class="primary" id="again" type="button">Replay mission</button><a href="cinematic/credits.html">Sources &amp; credits</a></section>
   <div id="paused" role="dialog" aria-modal="true" aria-labelledby="paused-title" hidden><div><h2 id="paused-title">Mission paused</h2><button class="primary" id="resume" type="button">Resume</button></div></div>
-  <section id="unsupported" hidden><h2>3D graphics are unavailable</h2><p>Enable hardware acceleration or open this file in Chrome or Edge to play.</p><button id="watch" type="button" hidden>Watch the opening</button></section>
 </main>
-<noscript>Enable JavaScript to play the locally rendered mission.</noscript>
+<noscript>Enable JavaScript to play ECHOES.</noscript>
 </body>
 </html>

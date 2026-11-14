@@ -214,6 +214,37 @@ function ship(p,kind='capsule'){
   g.userData.plume=plume;
   return g;
 }
+function plasmaTrail(parent) {
+  const geometry=new T.ConeGeometry(.94,6.1,64,22,true);
+  geometry.translate(0,-2.16,0);
+  const material=new T.ShaderMaterial({
+    uniforms:{seconds:{value:0},strength:{value:0}},
+    transparent:true,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending,
+    vertexShader:`varying vec2 tex;
+      uniform float seconds;
+      void main(){
+        tex=uv;
+        vec3 point=position;
+        float jitter=sin(39.0*uv.x+12.0*uv.y-23.0*seconds)*.07*sin(3.14*uv.y);
+        point.xz*=1.0+jitter;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(point,1.0);
+      }`,
+    fragmentShader:`varying vec2 tex;
+      uniform float seconds;
+      uniform float strength;
+      void main(){
+        float flicker=.5+.5*sin(tex.x*238.8+tex.y*20.0+seconds*35.0)*sin(tex.x*75.4-seconds*26.0);
+        float pulse=smoothstep(.08,.3,tex.y)*(1.0-smoothstep(.7,1.0,tex.y));
+        float heat=smoothstep(.39,.91,tex.y);
+        vec3 rgb=mix(vec3(1.0,.12,.019),vec3(1.0,.64,.24),heat);
+        gl_FragColor=vec4(rgb,(.19+.63*flicker)*pulse*strength);
+      }`
+  });
+  const trail=mesh(parent,geometry,material);
+  trail.castShadow=trail.receiveShadow=false;
+  trail.visible=false;
+  return trail;
+}
 function voyagerModel(p){
   const g=group(p);
   tube(g,.55,.68,.43,foil,0,0,0,10);
