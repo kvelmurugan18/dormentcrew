@@ -93,7 +93,7 @@ async function run() {
     await playing();
     await skip.click();
     await page.waitForFunction(()=>mode==='field'&&field.kind==='mars');
-    await page.waitForFunction(()=>field.scene.background?.image?.naturalWidth===4096);
+    assert.ok(await page.evaluate(()=>field.scene.background===marsDaylight&&field.scene.background.isCanvasTexture));
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await page.waitForFunction(()=>field.models[1].children.some(child=>child.isGroup&&child.visible&&child.name!==''));
     await screenshot(page,'final-mars');

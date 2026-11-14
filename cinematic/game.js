@@ -159,7 +159,7 @@ function showSequence(clips,onDone,media=''){
   if(filmPlaying){
     failedMedia=media;
     score.pause();
-    film.src=finalAssets+media+'.mp4?v=2026';
+    film.src=finalAssets+media+'.mp4?v=mars-day';
     film.hidden=false;
     film.play().catch(()=>{
       if(generation===filmGeneration) recoverFilm();

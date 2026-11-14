@@ -199,13 +199,28 @@ function useNightSky(scene){
   scene.background=expeditionSky;
   scene.backgroundIntensity=.52;
 }
+let marsDaylight;
+function useMarsDaylight(scene){
+  marsDaylight??=canvasTexture(256,128,(context,width,height)=>{
+    const sky=context.createLinearGradient(0,0,0,height);
+    sky.addColorStop(0,'#956e62');
+    sky.addColorStop(.32,'#c79a84');
+    sky.addColorStop(.48,'#e5bc9b');
+    sky.addColorStop(.55,'#e5bc9b');
+    sky.addColorStop(1,'#985e45');
+    context.fillStyle=sky;
+    context.fillRect(0,0,width,height);
+  });
+  marsDaylight.mapping=T.EquirectangularReflectionMapping;
+  scene.background=marsDaylight;
+  scene.fog=new T.FogExp2(0xe5bc9b,.009);
+}
 function surface(kind){
   const scene=new T.Scene(),mars=kind==='mars';
-  useNightSky(scene);
-  if(mars)scene.fog=new T.FogExp2(0x181724,.009);
-  const sun=lighting(scene,mars?0x8d9ec7:0xa4bcf0,mars?0x493039:0x686166,mars?0xffd1a3:0xfff4e1,mars?1.85:2.2,true);
-  if(mars)scene.add(new T.HemisphereLight(0xb4bddd,0xb8866e,.55));
-  sun.position.set(-55,26,-3);
+  if(mars)useMarsDaylight(scene);
+  else useNightSky(scene);
+  const sun=lighting(scene,mars?0xf0ccab:0xa4bcf0,mars?0x9f6346:0x686166,mars?0xffdeb9:0xfff4e1,mars?2.4:2.2,true);
+  sun.position.set(-55,mars?60:26,-3);
   terrain(scene,kind);
   if(!mars){
     const earth=planet(scene,'earth',2.55,-42,35,-123,false);
