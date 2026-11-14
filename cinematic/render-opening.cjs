@@ -91,9 +91,10 @@ async function assemble(name,clips) {
 async function encode(page,name,clips) {
   await page.evaluate(name=>readyToRender(name),name);
   await page.waitForLoadState('networkidle');
+  const soundtrack=await page.evaluate(name=>window.filmSoundtrack(name),name);
   const length=clips.reduce((sum,clip)=>sum+clip.duration,0);
   const args=['-y','-hide_banner','-loglevel','error','-f','image2pipe','-framerate',String(rate),'-vcodec','mjpeg','-i','pipe:0',
-    '-stream_loop','-1','-i',assets+'score.wav'];
+    '-stream_loop','-1','-i',assets+soundtrack+'.wav'];
   const filters=['[1:a]volume=0.16[score]'];
   const audioInputs=['[score]'];
   let offset=0;

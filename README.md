@@ -1,6 +1,6 @@
 # ECHOES — The Last Transmission
 
-A cinematic browser game by Dorment Crew. In 2042, Yuva and E.D.I.T.H. begin an expedition to investigate the last signals from Surveyor 3 and Opportunity. The game uses historical NASA mission records within a dramatized expedition that ends on Earth in 2045.
+A cinematic browser game by Dorment Crew. In this dramatized expedition set in 2026, Yuva and E.D.I.T.H. investigate the last signals from Surveyor 3 and Opportunity using historical NASA mission records.
 
 ## Play
 

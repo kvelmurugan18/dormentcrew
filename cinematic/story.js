@@ -20,7 +20,7 @@ const lines = {
   opportunity: ['E.D.I.T.H.', 'Opportunity’s instruments found evidence that water once shaped rocks on Mars. During the twenty eighteen storm, dust blocked sunlight and the solar-powered rover fell silent. Earth sent over a thousand recovery commands. Opportunity never answered.'],
   last: ['YUVA', 'I see the last frame. Only part of it made it home. The dates and the storm tell us why the signal stopped.'],
   spiritRepair: ['E.D.I.T.H.', 'Earlier, Spirit had a different problem. In two thousand four, its computer repeatedly reset while trying to manage flash memory. Engineers on Earth temporarily bypassed flash, cleared thousands of files and confirmed normal boot. That recovery happened during Spirit’s mission.'],
-  depart: ['MISSION CONTROL', 'Earth orbit, 2045. Yuva and Edith are together again. Their records have arrived safely. The crew is cleared for the final return to Earth.'],
+  depart: ['MISSION CONTROL', 'Earth orbit, 2026. Yuva and Edith are together again. Their records have arrived safely. The crew is cleared for the final return to Earth.'],
   news: ['NEWS REPORTER', 'From the archive. NASA marked a remarkable distance in the Voyager story. In November twenty twenty-six, Voyager One was projected to reach one light-day from Earth. That is roughly twenty-six billion kilometers.'],
   imagine: ['YUVA', 'A radio signal would take a whole day to travel that far. I keep picturing the two probes out there, each on its own path, each carrying a little piece of home.'],
   record: ['E.D.I.T.H.', 'Each Golden Record carries sounds, music, greetings and images from Earth. It was made to tell a future listener something about the people who sent it.'],

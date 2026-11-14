@@ -203,7 +203,8 @@ function surface(kind){
   const scene=new T.Scene(),mars=kind==='mars';
   useNightSky(scene);
   if(mars)scene.fog=new T.FogExp2(0x181724,.009);
-  const sun=lighting(scene,mars?0x8d9ec7:0xa4bcf0,mars?0x493039:0x686166,mars?0xffd1a3:0xfff4e1,mars?.95:2.2,true);
+  const sun=lighting(scene,mars?0x8d9ec7:0xa4bcf0,mars?0x493039:0x686166,mars?0xffd1a3:0xfff4e1,mars?1.85:2.2,true);
+  if(mars)scene.add(new T.HemisphereLight(0xb4bddd,0xb8866e,.55));
   sun.position.set(-55,26,-3);
   terrain(scene,kind);
   if(!mars){

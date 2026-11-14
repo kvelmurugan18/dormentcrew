@@ -7,9 +7,9 @@
 <link rel="stylesheet" href="cinematic/game.css"><link rel="stylesheet" href="cinematic/final.css?v=night">
 <script defer src="cinematic/assets/three.min.js"></script>
 <script defer src="cinematic/earth.js"></script><script defer src="cinematic/sky.js"></script>
-<script defer src="cinematic/archive-data.js?v=terrain"></script><script defer src="cinematic/story.js?v=terrain"></script><script defer src="cinematic/timings.js?v=night"></script>
+<script defer src="cinematic/archive-data.js?v=terrain"></script><script defer src="cinematic/story.js?v=2026"></script><script defer src="cinematic/timings.js?v=2026"></script>
 <script defer src="cinematic/lunar-terrain.js"></script>
-<script defer src="cinematic/assets/final/model-loader.js"></script><script defer src="cinematic/actor.js?v=terrain"></script><script defer src="cinematic/models.js?v=terrain"></script><script defer src="cinematic/world.js?v=night"></script><script defer src="cinematic/shots.js?v=terrain"></script><script defer src="cinematic/direction.js?v=terrain"></script><script defer src="cinematic/panels.js?v=night"></script><script defer src="cinematic/game.js?v=night"></script>
+<script defer src="cinematic/assets/final/model-loader.js"></script><script defer src="cinematic/actor.js?v=terrain"></script><script defer src="cinematic/models.js?v=terrain"></script><script defer src="cinematic/world.js?v=2026"></script><script defer src="cinematic/shots.js?v=2026"></script><script defer src="cinematic/direction.js?v=terrain"></script><script defer src="cinematic/panels.js?v=2026"></script><script defer src="cinematic/game.js?v=2026"></script>
 </head>
 <body>
 <main id="screen" aria-label="ECHOES mission">
@@ -27,7 +27,7 @@
     <div class="tools"><button id="archive-open" type="button">Archive</button><button type="button" id="audio" aria-pressed="false" title="Mute or unmute">Sound on</button><button type="button" id="captions" aria-pressed="true" title="Toggle captions">CC</button><button type="button" id="pause" aria-label="Pause" title="Pause (Esc)" hidden>Ⅱ</button></div>
   </header>
   <section id="menu" aria-labelledby="title">
-    <p class="overline">MOON / MARS · 2042</p>
+    <p class="overline">MOON / MARS · 2026</p>
     <h1 id="title">ECHOES</h1><p class="subtitle">The Last Transmission</p>
     <p class="premise">Two worlds went silent. Follow Yuva and E.D.I.T.H. to where the signals ended.</p>
     <button id="start" type="button" class="primary">Begin mission <span aria-hidden="true">↗</span></button>
@@ -60,11 +60,11 @@
     <div class="archive-actions"><span id="archive-count"></span><button class="secondary" id="archive-next" type="button">Next record →</button><button class="secondary" id="inspection-film" type="button" hidden>Watch replay</button><button class="primary" id="archive-continue" type="button" hidden>Continue mission →</button></div>
   </div></dialog>
   <section id="interview" aria-labelledby="question" hidden><div class="interview-panel">
-    <span class="overline" id="quiz-progress">EARTH · 2045</span><h2 id="question" tabindex="-1"></h2>
+    <span class="overline" id="quiz-progress">EARTH · 2026</span><h2 id="question" tabindex="-1"></h2>
     <div id="answers"></div><p id="quiz-feedback" role="status"></p>
     <button type="button" class="secondary" id="quiz-clue">Show clue</button><button type="button" id="quiz-next" class="primary" hidden>Next question →</button>
   </div></section>
-  <section id="end" aria-labelledby="end-title" hidden><p class="overline">EARTH · 2045</p><h2 id="end-title">Transmission complete.</h2><p id="scoreline"></p><button class="primary" id="again" type="button">Replay mission</button><a href="cinematic/credits.html">Sources &amp; credits</a></section>
+  <section id="end" aria-labelledby="end-title" hidden><p class="overline">EARTH · 2026</p><h2 id="end-title">Transmission complete.</h2><p id="scoreline"></p><button class="primary" id="again" type="button">Replay mission</button><a href="cinematic/credits.html">Sources &amp; credits</a></section>
   <div id="paused" role="dialog" aria-modal="true" aria-labelledby="paused-title" hidden><div><h2 id="paused-title">Mission paused</h2><button class="primary" id="resume" type="button">Resume</button></div></div>
 </main>
 <noscript>Enable JavaScript to play ECHOES.</noscript>

@@ -12,10 +12,12 @@ async function record() {
     'YUVA':'af_nicole',
     'NEWS REPORTER':'af_heart'
   };
+  const selected=process.argv.slice(2);
   for(const [id,[role,line]] of Object.entries(dialogue)){
-    const text=line.replaceAll('ALSEP','Al-sep').replaceAll('2042','twenty forty-two')
-      .replaceAll('2045','twenty forty-five').replaceAll('E.D.I.T.H.','Edith');
-    const speed=role==='E.D.I.T.H.'?1.04:role==='YUVA'?.90:.85;
+    if(selected.length&&!selected.includes(id))continue;
+    const text=line.replaceAll('ALSEP','Al-sep').replaceAll('2026','twenty twenty-six')
+      .replaceAll('E.D.I.T.H.','Edith');
+    const speed=role==='E.D.I.T.H.'?1.04:role==='YUVA'?1.02:.85;
     const sound=await tts.generate(text,{voice:roles[role],speed});
     const {audio,sampling_rate:rate}=sound;
     if(audio.length<2048)throw Error('Missing audio for '+id);

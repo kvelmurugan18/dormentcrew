@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const screen=$('screen'), canvas=$('world'), film=$('film'), interviewVideo=$('interview-video');
-const voice = new Audio(), score = new Audio('cinematic/assets/score.wav');
+const voice = new Audio(), score = new Audio();
 score.loop=true;score.volume=.21;
 let muted=false, captions=true, paused=false, resumeFocus, activeVoice='', started=false;
 let mode='menu', field, index=0, sequence=null, sequenceNext, shotIndex=0, shotTime=0, totalTime=0;
@@ -20,6 +20,12 @@ let visibleCue=-1;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let autoNavigate=false;
 const escapeStage = () => !paused && !$('archive').open;
+
+function cueScore(track){
+  const url='cinematic/assets/'+track+'.wav';
+  if(score.getAttribute('src')!==url)score.src=url;
+  if(!capture&&!paused&&!filmPlaying)score.play().catch(()=>{});
+}
 
 function initRenderer(){
   try{
@@ -81,7 +87,7 @@ function updateCaption(second){
 function talk(id){
   voice.pause();caption(id);
   if(!id||capture||filmPlaying)return;
-  voice.src='cinematic/assets/'+id+'.wav?v=night';
+  voice.src='cinematic/assets/'+id+'.wav?v=2026';
   voice.play().catch(()=>{});
 }
 function changeMode(next){
@@ -109,6 +115,7 @@ function changeMode(next){
   $('end').hidden=next!=='end';
   $('sky-credit').hidden=true;
   $('pause').hidden=!started||next==='end';
+  if(next==='field')cueScore('score-'+field.kind);
   if(!reduce){
     $('cut').classList.remove('flash');void $('cut').offsetWidth;$('cut').classList.add('flash');
   }
@@ -152,7 +159,7 @@ function showSequence(clips,onDone,media=''){
   if(filmPlaying){
     failedMedia=media;
     score.pause();
-    film.src=finalAssets+media+'.mp4?v=night';
+    film.src=finalAssets+media+'.mp4?v=2026';
     film.hidden=false;
     film.play().catch(()=>{
       if(generation===filmGeneration) recoverFilm();
@@ -170,7 +177,7 @@ function recoverFilm(){
     return;
   }
   if(!paused){
-    score.play().catch(()=>{});
+    cueScore(soundtrackFor(failedMedia));
     enterShot(sequence[shotIndex]);
   }
 }
@@ -185,7 +192,6 @@ function nextSequence(){
   film.hidden=true;
   film.removeAttribute('src');
   film.load();
-  if(!muted&&!paused) score.play().catch(()=>{});
   talk('');
   done();
 }
@@ -216,7 +222,6 @@ function enterField(kind,savedIndex=0){
   saveCheckpoint(kind,index);
   for(const markers of field.beacons)for(const beacon of markers)beacon.visible=false;
   changeMode('field');objective();talk(kind==='moon'?'moonStart':'marsStart');
-  if(!capture)score.play().catch(()=>{});
   canvas.focus({preventScroll:true});
 }
 function objective(){
@@ -364,7 +369,7 @@ function finish(){
   talk('');
   clearCheckpoint();
   changeMode('end');
-  $('feed').textContent='EARTH · 2045 · INTERVIEW COMPLETE';
+  $('feed').textContent='EARTH · 2026 · INTERVIEW COMPLETE';
   $('scoreline').textContent=scoreCount+' / '+questions.length+' correct on the first answer';
   $('again').focus({preventScroll:true});
 }
@@ -522,7 +527,6 @@ const controls={
 function start(resume=false){
   started=true;paused=false;
   if(!renderer){offerLowGraphics(resume);return;}
-  score.play().catch(()=>{});
   if(resume && checkpoint){
     visited=new Set(checkpoint.visited);
     if(checkpoint.chapter==='return'){startReturn();return;}
@@ -623,6 +627,7 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addE
 addEventListener('resize',resize);
 const canRender = initRenderer();
 if(capture && canRender){
+  window.filmSoundtrack=soundtrackFor;
   window.filmPlan={'opening-film':introClips,'transfer-film':callClips,'return-film':returnClips};
   for(const [id,shots] of Object.entries(recordShots))window.filmPlan['record-'+id]=shots;
   window.readyToRender=async name=>{

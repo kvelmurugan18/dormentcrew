@@ -142,9 +142,10 @@ function startInterview() {
   quizIndex = 0;
   scoreCount = 0;
   changeMode('quiz');
-  $('feed').textContent = 'EARTH · 2045 · YUVA LIVE';
+  $('feed').textContent = 'EARTH · 2026 · YUVA LIVE';
+  cueScore('score-return');
   if(!reduce){
-    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4?v=night';
+    if(!interviewVideo.getAttribute('src'))interviewVideo.src=finalAssets+'interview-loop.mp4?v=2026';
     interviewVideo.hidden=false;
     interviewVideo.play().catch(()=>{interviewVideo.hidden=true;});
   }

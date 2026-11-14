@@ -3,10 +3,16 @@ const clip=(shot,voice,label,options={})=>({
   shot,voice,label,duration:(voiceTimes[voice] || 2.4)+.6,...options
 });
 const voyagerCredit={credit:'Voyager animation · NASA / Jonathan North',source:'https://svs.gsfc.nasa.gov/15120/'};
+function soundtrackFor(filmName){
+  if(filmName==='return-film')return 'score-return';
+  if(['transfer-film','record-ridge','record-opportunity','record-last'].includes(filmName))return 'score-mars';
+  if(filmName.startsWith('record-'))return 'score-moon';
+  return 'score';
+}
 const introClips=[
   clip('launch','','FLIGHT ARCHIVE · ARTEMIS II · APRIL 2026',{id:'flightArchive',duration:5.5,chapter:['Chapter 1','Two worlds go quiet'],
     credit:{credit:'Artemis II launch footage · NASA',source:'https://svs.gsfc.nasa.gov/31385/'}}),
-  clip('signal','signal','EARTH · 2042',{
+  clip('signal','signal','EARTH · 2026',{
     credit:{credit:'Orion reference animation · NASA',source:'https://images.nasa.gov/details/Artemis_I_Orion_in_space_animation4K_2021'}}),
   clip('signal','trainingMoon','YUVA · LUNAR TRAINING',{
     credit:{credit:'Training reference · NASA / Artemis II',source:'https://images.nasa.gov/details/jsc2026m000006-Artemis_II_Lunar_Flyby_Photography_Training'}}),
@@ -26,7 +32,7 @@ const callClips=[
   clip('cameraLink','cameraLink','E.D.I.T.H. · OPTICAL HANDOFF')
 ];
 const returnClips=[
-  clip('depart','depart','EARTH ORBIT · 2045',{chapter:['Chapter 4','A light-day from home']}),
+  clip('depart','depart','EARTH ORBIT · 2026',{chapter:['Chapter 4','A light-day from home']}),
   clip('depart','news','RETURN CABIN · ARCHIVE NEWS',{news:true}),
   clip('stars','imagine','YUVA’S IMAGINATION · THE VOYAGERS',{credit:voyagerCredit}),
   clip('record','record','YUVA’S IMAGINATION · GOLDEN RECORD',{credit:voyagerCredit}),
